@@ -3,18 +3,25 @@ import { UserContext } from "../contexts/UserContext";
 import ProductivityStreak from "../components/dashboard/ProductivityStreak";
 import WorkTravelBalance from "../components/dashboard/WorkTravelBalance";
 import TaskInsights from "../components/dashboard/TaskInsights";
-import { MapPin, Wifi, DollarSign, Shield, ThumbsUp, FileText } from 'lucide-react';
-import { Link } from 'react-router-dom';
+import { MapPin, Wifi, DollarSign, Shield, ThumbsUp, FileText, MessageSquare, Bookmark, Link } from 'lucide-react';
+import { Link as RouterLink } from 'react-router-dom';
 
 const DestinationCard = ({ destination }) => (
   <div className="bg-white p-4 rounded-lg shadow border-b border-slate-400">
+    <img src={`/api/placeholder/300/200`} alt={`${destination.city}, ${destination.country}`} className="w-full h-40 object-cover rounded-md mb-4" />
     <h3 className="text-lg font-semibold text-gray-800 mb-2">{destination.city}, {destination.country}</h3>
     <p className="text-gray-600 mb-2 text-sm">{destination.description.substring(0, 100)}...</p>
-    <div className="grid grid-cols-2 gap-1 text-xs text-gray-500">
+    <div className="grid grid-cols-2 gap-1 text-xs text-gray-500 mb-4">
       <span className="flex items-center"><DollarSign size={12} className="mr-1" /> Cost: {destination.cost}/5</span>
       <span className="flex items-center"><Wifi size={12} className="mr-1" /> Internet: {destination.internet}/5</span>
       <span className="flex items-center"><Shield size={12} className="mr-1" /> Safety: {destination.safety}/5</span>
       <span className="flex items-center"><ThumbsUp size={12} className="mr-1" /> {destination.likes} likes</span>
+    </div>
+    <div className="flex justify-between items-center text-sm text-gray-600">
+      <span className="flex items-center"><ThumbsUp size={14} className="mr-1" /> {destination.upvotes}</span>
+      <span className="flex items-center"><MessageSquare size={14} className="mr-1" /> {destination.comments}</span>
+      <span className="flex items-center"><Bookmark size={14} className="mr-1" /> {destination.bookmarks}</span>
+      <Link size={14} className="text-pink-600 hover:text-pink-700 cursor-pointer" />
     </div>
   </div>
 );
@@ -26,11 +33,11 @@ const RecentNotesWidget = ({ notes }) => (
       {notes.map(note => (
         <li key={note.id} className="flex items-start">
           <FileText size={16} className="mr-2 mt-1 flex-shrink-0" />
-          <Link to={`/notes/${note.id}`} className="text-sm hover:text-pink-600">{note.title}</Link>
+          <RouterLink to={`/notes/${note.id}`} className="text-sm hover:text-pink-600">{note.title}</RouterLink>
         </li>
       ))}
     </ul>
-    <Link to="/notes" className="text-pink-600 hover:text-pink-700 text-sm mt-4 inline-block">View all notes</Link>
+    <RouterLink to="/notes" className="text-pink-600 hover:text-pink-700 text-sm mt-4 inline-block">View all notes</RouterLink>
   </div>
 );
 
@@ -47,6 +54,9 @@ const Dashboard = () => {
       internet: 4,
       safety: 4,
       likes: 1250,
+      upvotes: 782,
+      comments: 56,
+      bookmarks: 230,
     },
     {
       id: 2,
@@ -57,6 +67,9 @@ const Dashboard = () => {
       internet: 5,
       safety: 5,
       likes: 980,
+      upvotes: 645,
+      comments: 42,
+      bookmarks: 189,
     },
     {
       id: 3,
@@ -67,6 +80,9 @@ const Dashboard = () => {
       internet: 4,
       safety: 3,
       likes: 750,
+      upvotes: 521,
+      comments: 38,
+      bookmarks: 142,
     },
   ]);
   const [recentNotes, setRecentNotes] = useState([
@@ -102,7 +118,7 @@ const Dashboard = () => {
       <div className="space-y-4">
         <div className="flex justify-between items-center">
           <h2 className="text-xl font-semibold text-gray-800">Explore Destinations</h2>
-          <Link to="/explore" className="text-pink-600 hover:text-pink-700">View all</Link>
+          <RouterLink to="/explore" className="text-pink-600 hover:text-pink-700">View all</RouterLink>
         </div>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           {destinations.map((destination) => (
