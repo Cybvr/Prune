@@ -11,7 +11,8 @@ import NomadHub from './pages/NomadHub';
 import HelpPage from './pages/HelpPage';
 import SettingsPage from './pages/SettingsPage';
 import ChallengeDetail from './pages/ChallengeDetail';
-import Picks from './pages/Picks';
+import Explore from './pages/Explore';
+import Notes from './pages/Notes'; // Add this import
 import Note from './pages/Note';
 import LocationSettings from './pages/LocationSettings';
 import Rewards from './pages/Rewards';
@@ -28,10 +29,11 @@ function App() {
               <Route path="dashboard" element={<Dashboard />} />
               <Route path="tasks" element={<Tasks />} />
               <Route path="challenges" element={<Challenges />} />
-              <Route path="picks" element={<Picks />} />
+              <Route path="explore" element={<Explore />} />
               <Route path="nomad-hub" element={<NomadHub />} />
               <Route path="help" element={<HelpPage />} />
               <Route path="settings" element={<SettingsPage />} />
+              <Route path="notes" element={<Notes />} /> {/* Add this route */}
               <Route path="notes/:id" element={<Note />} />
               <Route path="challenges/:id" element={<ChallengeDetail />} />
               <Route path="location-settings" element={<LocationSettings />} />
