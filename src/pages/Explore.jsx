@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { MapPin, Wifi, DollarSign, Shield, ThumbsUp, Globe, Info, Plus, MessageSquare, Bookmark, Link } from 'lucide-react';
+import { MapPin, Wifi, DollarSign, Shield, ThumbsUp, Globe, Info, Plus, MessageSquare, Bookmark, Link, X, Share2 } from 'lucide-react';
 
 const DestinationCard = ({ destination, onClick }) => (
   <div className="bg-white p-6 rounded-lg shadow border-b border-slate-400 cursor-pointer" onClick={() => onClick(destination)}>
@@ -56,36 +56,7 @@ const Explore = () => {
       comments: 42,
       bookmarks: 189,
     },
-    {
-      id: 3,
-      city: "Cape Town",
-      country: "South Africa",
-      continent: "africa",
-      description: "Beautiful coastal city with a diverse culture and stunning landscapes.",
-      cost: 3,
-      internet: 4,
-      safety: 3,
-      likes: 750,
-      overall: 4.2,
-      upvotes: 521,
-      comments: 38,
-      bookmarks: 142,
-    },
-    {
-      id: 4,
-      city: "Medellin",
-      country: "Colombia",
-      continent: "america",
-      description: "Modern city with a pleasant climate and growing digital nomad community.",
-      cost: 2,
-      internet: 4,
-      safety: 3,
-      likes: 820,
-      overall: 4.0,
-      upvotes: 598,
-      comments: 45,
-      bookmarks: 176,
-    }
+    // Add more destinations as needed
   ]);
 
   const filteredDestinations = destinations.filter(destination => {
@@ -100,6 +71,8 @@ const Explore = () => {
   const handleSubmitDestination = () => {
     console.log("Open form to submit a new destination");
   };
+
+  const otherLocations = ["Lagos", "Porto Rico", "Schenzhen"];
 
   return (
     <div className="p-6 space-y-6">
@@ -148,22 +121,44 @@ const Explore = () => {
 
       {selectedDestination && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center">
-          <div className="bg-white p-6 rounded-lg w-96">
-            <h2 className="text-2xl font-semibold mb-4">{selectedDestination.city}, {selectedDestination.country}</h2>
-            <p className="mb-4">{selectedDestination.description}</p>
-            <div className="grid grid-cols-2 gap-2 text-sm mb-4">
-              <span>Cost: {selectedDestination.cost}/5</span>
-              <span>Internet: {selectedDestination.internet}/5</span>
-              <span>Safety: {selectedDestination.safety}/5</span>
-              <span>Likes: {selectedDestination.likes}</span>
-              <span>Overall: {selectedDestination.overall}/5</span>
+          <div className="bg-white rounded-lg w-full max-w-2xl overflow-hidden">
+            <div className="relative">
+              <img src={`/api/placeholder/600/300`} alt={`${selectedDestination.city}, ${selectedDestination.country}`} className="w-full h-48 object-cover" />
+              <button onClick={() => setSelectedDestination(null)} className="absolute top-2 right-2 bg-white rounded-full p-1">
+                <X size={24} />
+              </button>
             </div>
-            <button 
-              onClick={() => setSelectedDestination(null)}
-              className="w-full py-2 bg-pink-600 text-white rounded-lg"
-            >
-              Close
-            </button>
+            <div className="p-4">
+              <h2 className="text-2xl font-bold mb-2">{selectedDestination.city}</h2>
+              <p className="text-gray-600 mb-4">{selectedDestination.description}</p>
+              <div className="flex justify-between items-center mb-4">
+                <div className="flex space-x-4">
+                  <button className="flex items-center space-x-1 text-gray-600">
+                    <ThumbsUp size={18} />
+                    <span>{selectedDestination.likes}</span>
+                  </button>
+                  <button className="flex items-center space-x-1 text-gray-600">
+                    <MessageSquare size={18} />
+                    <span>{selectedDestination.comments}</span>
+                  </button>
+                </div>
+                <button className="flex items-center space-x-1 text-gray-600">
+                  <Share2 size={18} />
+                  <span>Share</span>
+                </button>
+              </div>
+              <div className="border-t pt-4">
+                <h3 className="font-semibold mb-2">Other Locations</h3>
+                <div className="grid grid-cols-3 gap-2">
+                  {otherLocations.map((city) => (
+                    <div key={city} className="bg-gray-200 rounded p-2">
+                      <div className="bg-gray-400 h-16 mb-1 rounded"></div>
+                      <p className="text-sm font-medium">{city}</p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       )}

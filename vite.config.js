@@ -8,5 +8,13 @@ export default defineConfig({
   },
   css: {
     postcss: './postcss.config.cjs'
+  },
+  build: {
+    outDir: 'dist',
+  },
+  server: {
+    host: '0.0.0.0',
+    strictPort: true,
+    port: 8080
   }
 })
