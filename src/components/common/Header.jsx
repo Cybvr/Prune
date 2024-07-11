@@ -9,7 +9,7 @@ const Header = ({ isMobile, toggleSidebar }) => {
   const currentLocation = user?.currentLocation || "Unknown Location";
 
   return (
-    <header className="bg-white shadow-md p-4 flex justify-between items-center">
+    <header className="bg-white shadow-md p-4 flex justify-between items-center border-b border-gray-300">
       <div className="flex items-center">
         <Link to="/" className="flex items-center mr-4">
           <img src="../../assets/images/pruneLogoBlack.svg" alt="Prune" className="h-8 w-auto" />

@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { Home, CheckSquare, FileText, Trophy, Compass, Users, ChevronsLeft, ChevronsRight } from 'lucide-react';
+import { Home, CheckSquare, Trophy, Compass, Users, ChevronsLeft, ChevronsRight, FileText } from 'lucide-react';
 
 const SidebarItem = ({ icon: Icon, text, to, isOpen }) => {
   const location = useLocation();
@@ -9,7 +9,7 @@ const SidebarItem = ({ icon: Icon, text, to, isOpen }) => {
     <Link
       to={to}
       className={`flex items-center p-2 space-x-2 rounded-md ${
-        isActive ? 'bg-[#be185c] text-gray-800' : 'text-gray-600 hover:bg-gray-100'
+        isActive ? 'bg-[#be185c] text-black' : 'text-gray-600 hover:bg-gray-100'
       }`}
     >
       <Icon size={18} />
@@ -30,27 +30,26 @@ const Sidebar = () => {
   return (
     <div className={`flex flex-col h-full bg-white shadow transition-all duration-300 ${isOpen ? 'w-52' : 'w-16'}`}>
       <div className="flex-grow overflow-y-auto">
-        <div className="space-y-3 p-3">
+        <div className="space-y-2 p-3">
           <div>
-            <ul className="space-y-1">
+            <ul className="space-y-0.5">
               <li><SidebarItem icon={Home} text="Home" to="/dashboard" isOpen={isOpen} /></li>
+              <li><SidebarItem icon={Compass} text="Explore" to="/explore" isOpen={isOpen} /></li>
               <li><SidebarItem icon={CheckSquare} text="Tasks" to="/tasks" isOpen={isOpen} /></li>
-              <li><SidebarItem icon={FileText} text="Notes" to="/notes" isOpen={isOpen} /></li>
-              <li><SidebarItem icon={Trophy} text="Challenges" to="/challenges" isOpen={isOpen} /></li>
             </ul>
           </div>
           {isOpen && (
             <>
               <div>
-                <h2 className="px-2 text-xs font-semibold text-gray-600 uppercase tracking-wider">Discover</h2>
-                <ul className="mt-2 space-y-1">
-                  <li><SidebarItem icon={Compass} text="Explore" to="/explore" isOpen={isOpen} /></li>
+                <h2 className="px-2 text-xs font-semibold text-gray-600 uppercase tracking-wider mt-4">Discover</h2>
+                <ul className="mt-1 space-y-0.5">
+                  <li><SidebarItem icon={Trophy} text="Challenges" to="/challenges" isOpen={isOpen} /></li>
                   <li><SidebarItem icon={Users} text="Nomad Hub" to="/nomad-hub" isOpen={isOpen} /></li>
                 </ul>
               </div>
               <div>
-                <h2 className="px-2 text-xs font-semibold text-gray-600 uppercase tracking-wider">Activity</h2>
-                <ul className="mt-2 space-y-1">
+                <h2 className="px-2 text-xs font-semibold text-gray-600 uppercase tracking-wider mt-4">Recent Notes</h2>
+                <ul className="mt-1 space-y-0.5">
                   {recentNotes.map((note) => (
                     <li key={note.id}>
                       <Link to={`/notes/${note.id}`} className="flex items-center p-2 space-x-2 rounded-md text-gray-600 hover:bg-gray-100">
