@@ -1,0 +1,45 @@
+run = "npm run dev"
+modules = ["nodejs-20"]
+
+[nix]
+channel = "stable-24_05"
+
+[deployment]
+run = ["sh", "-c", "npm run dev"]
+deploymentTarget = "cloudrun"
+
+[[ports]]
+localPort = 3000
+externalPort = 80
+
+[[ports]]
+localPort = 3001
+externalPort = 3001
+
+[[ports]]
+localPort = 34559
+externalPort = 4200
+
+[[ports]]
+localPort = 36131
+externalPort = 3000
+
+[[ports]]
+localPort = 36975
+externalPort = 6000
+
+[[ports]]
+localPort = 41661
+externalPort = 3002
+
+[[ports]]
+localPort = 45011
+externalPort = 3003
+
+[[ports]]
+localPort = 45367
+externalPort = 5000
+
+[[ports]]
+localPort = 46297
+externalPort = 5173
