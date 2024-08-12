@@ -1,30 +1,10 @@
-'use client'
-
-import React, { useState } from 'react';
+import React from 'react';
 import Link from 'next/link';
-import {
-  Dialog,
-  DialogPanel,
-  Disclosure,
-  DisclosureButton,
-  DisclosurePanel,
-  PopoverGroup,
-} from '@headlessui/react'
-import {
-  Bars3Icon,
-  XMarkIcon,
-} from '@heroicons/react/24/outline'
-import { ChevronDownIcon } from '@heroicons/react/20/solid'
-
-const products = [
-  { name: 'Text Analysis', description: 'Understand your text better', href: '#', icon: 'ChartPieIcon' },
-  { name: 'Summarization', description: 'Get concise summaries', href: '#', icon: 'CursorArrowRaysIcon' },
-  { name: 'Keyword Extraction', description: 'Identify key topics', href: '#', icon: 'FingerPrintIcon' },
-  { name: 'Text-to-Speech', description: 'Listen to your content', href: '#', icon: 'SquaresPlusIcon' },
-]
+import { Bars3Icon, XMarkIcon } from '@heroicons/react/24/outline';
+import { Dialog, DialogPanel } from '@headlessui/react'; // You should ensure these imports if not already existing
 
 const Header: React.FC = () => {
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
+  const [mobileMenuOpen, setMobileMenuOpen] = React.useState(false); // Ensure you have the state management
 
   return (
     <header className="bg-white sticky top-0 z-50">
@@ -46,21 +26,21 @@ const Header: React.FC = () => {
           </button>
         </div>
         <div className="hidden lg:flex lg:gap-x-6">
-          <Link href="#about" className="text-sm font-semibold leading-6 text-gray-900">
+          <Link href="/about" className="text-sm font-semibold leading-6 text-gray-900 hover:text-gray-600">
             About
           </Link>
-          <Link href="/pricing" className="text-sm font-semibold leading-6 text-gray-900">
+          <Link href="/pricing" className="text-sm font-semibold leading-6 text-gray-900 hover:text-gray-600">
             Pricing
           </Link>
-          <Link href="#faqs" className="text-sm font-semibold leading-6 text-gray-900">
+          <Link href="#faqs" className="text-sm font-semibold leading-6 text-gray-900 hover:text-gray-600">
             FAQs
           </Link>
         </div>
         <div className="hidden lg:flex lg:flex-1 lg:justify-end lg:items-center lg:space-x-4">
-          <Link href="/auth/login" className="text-sm font-semibold leading-6 text-gray-900">
+          <Link href="/auth/login" className="text-sm font-semibold leading-6 text-gray-900 hover:text-gray-600">
             Log in
           </Link>
-          <Link href="/auth/register" className="px-4 py-2 bg-blue-600 text-white rounded-full hover:bg-blue-700 transition-colors duration-300">
+          <Link href="/auth/register" className="px-4 py-2 bg-blue-600 text-white text-sm font-semibold hover:bg-blue-700 transition-colors duration-300">
             Get Started
           </Link>
         </div>
@@ -86,7 +66,7 @@ const Header: React.FC = () => {
             <div className="-my-6 divide-y divide-gray-500/10">
               <div className="space-y-2 py-6">
                 <Link
-                  href="#about"
+                  href="/about"
                   className="-mx-3 block rounded-lg px-3 py-2 text-base font-semibold leading-7 text-gray-900 hover:bg-gray-50"
                 >
                   About
@@ -113,7 +93,7 @@ const Header: React.FC = () => {
                 </Link>
                 <Link
                   href="/auth/register"
-                  className="mt-4 block px-4 py-2 bg-blue-600 text-white rounded-full hover:bg-blue-700 transition-colors duration-300 text-center"
+                  className="mt-4 block px-4 py-2 bg-blue-600 text-white text-base font-semibold hover:bg-blue-700 transition-colors duration-300 text-center"
                 >
                   Get Started
                 </Link>
@@ -123,7 +103,7 @@ const Header: React.FC = () => {
         </DialogPanel>
       </Dialog>
     </header>
-  )
-}
+  );
+};
 
 export default Header;

@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { usePathname } from 'next/navigation';
-import { Bars3Icon, XMarkIcon } from '@heroicons/react/24/outline';
+import { Bars3Icon, XMarkIcon } from '@heroicons/react/24/solid';
 import { 
   HomeIcon,
   DocumentTextIcon,
@@ -16,7 +16,7 @@ import {
   ArrowRightOnRectangleIcon,
   ChatBubbleLeftEllipsisIcon,
   MoonIcon
-} from '@heroicons/react/24/outline';
+} from '@heroicons/react/24/solid';
 import Link from 'next/link';
 import Image from 'next/image';
 

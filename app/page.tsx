@@ -4,6 +4,7 @@ import FeatureSection from './components/web/FeatureSection';
 import CTASection from './components/web/CTASection';
 import Features from './components/web/Features';
 import FAQSection from './components/web/FAQSection';
+import GuideCards from './components/web/GuideCards';  // Import the new component
 
 export default function Home() {
   return (
@@ -26,8 +27,10 @@ export default function Home() {
               />
             </a>
           </div>
+          {/* Add the GuideCards component here */}
+          <GuideCards />
           <div className="container mx-auto pt-8 px-6 sm:px-8 lg:px-16">
-            <AIReadingApp />
+            
           </div>
         </div>
       </section>
