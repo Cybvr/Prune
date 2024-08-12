@@ -1,43 +1,42 @@
-import React from 'react';
-import { Send, Sun, Moon, Type, VolumeX, Volume2, Info } from 'lucide-react';
+import React from "react";
 
 const navigation = {
   product: [
-    { name: 'Features', href: '#' },
-    { name: 'How It Works', href: '#' },
-    { name: 'Pricing', href: '#' },
-    { name: 'FAQ', href: '#' },
+    { name: "Features", href: "#" },
+    { name: "How It Works", href: "#" },
+    { name: "Pricing", href: "#" },
+    { name: "FAQ", href: "#" },
   ],
   company: [
-    { name: 'About', href: '#' },
-    { name: 'Blog', href: '#' },
-    { name: 'Careers', href: '#' },
-    { name: 'Contact', href: '#' },
+    { name: "About", href: "#" },
+    { name: "Blog", href: "#" },
+    { name: "Careers", href: "#" },
+    { name: "Contact", href: "#" },
   ],
   legal: [
-    { name: 'Privacy', href: '#' },
-    { name: 'Terms', href: '#' },
+    { name: "Privacy", href: "#" },
+    { name: "Terms", href: "#" },
   ],
   social: [
     {
-      name: 'Twitter',
-      href: '#',
+      name: "Twitter",
+      href: "#",
       icon: (props) => <Send {...props} />,
     },
     {
-      name: 'GitHub',
-      href: '#',
+      name: "GitHub",
+      href: "#",
       icon: (props) => <Info {...props} />,
     },
     {
-      name: 'LinkedIn',
-      href: '#',
+      name: "LinkedIn",
+      href: "#",
       icon: (props) => <Type {...props} />,
     },
   ],
 };
 
-export default function Footer() {
+const Footer = () => {
   return (
     <footer className="bg-gray-900" aria-labelledby="footer-heading">
       <h2 id="footer-heading" className="sr-only">
@@ -102,13 +101,13 @@ export default function Footer() {
                 id="email-address"
                 autoComplete="email"
                 required
-                className="w-full min-w-0 appearance-none rounded-md border-0 bg-white/5 px-3 py-1.5 text-base text-white shadow-sm ring-1 ring-inset ring-white/10 placeholder:text-gray-500 focus:ring-2 focus:ring-inset focus:ring-indigo-500 sm:w-64 sm:text-sm sm:leading-6 xl:w-full"
+                className="w-full rounded-md border-0 px-4 py-2 text-base leading-6 text-gray-900 placeholder-gray-500 focus:ring-inset focus:ring-white"
                 placeholder="Enter your email"
               />
-              <div className="mt-4 sm:ml-4 sm:mt-0 sm:flex-shrink-0">
+              <div className="mt-4 sm:mt-0 sm:ml-4 sm:flex-shrink-0">
                 <button
                   type="submit"
-                  className="flex w-full items-center justify-center rounded-md bg-indigo-500 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-indigo-400 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-500"
+                  className="flex w-full items-center justify-center rounded-md bg-white px-4 py-2 text-base font-medium leading-6 text-gray-900 shadow-sm hover:bg-gray-100 focus:ring-2 focus:ring-white focus:ring-offset-2 focus:ring-offset-gray-900"
                 >
                   Subscribe
                 </button>
@@ -116,20 +115,14 @@ export default function Footer() {
             </form>
           </div>
         </div>
-        <div className="mt-16 border-t border-white/10 pt-8 sm:mt-20 md:flex md:items-center md:justify-between lg:mt-24">
-          <div className="flex space-x-6 md:order-2">
-            {navigation.social.map((item) => (
-              <a key={item.name} href={item.href} className="text-gray-500 hover:text-gray-400">
-                <span className="sr-only">{item.name}</span>
-                <item.icon className="h-6 w-6" aria-hidden="true" />
-              </a>
-            ))}
-          </div>
-          <p className="mt-8 text-xs leading-5 text-gray-400 md:order-1 md:mt-0">
+        <div className="mt-12 border-t border-gray-700 pt-8">
+          <p className="text-base leading-6 text-gray-400">
             &copy; {new Date().getFullYear()} Prune, Inc. All rights reserved.
           </p>
         </div>
       </div>
     </footer>
   );
-}
+};
+
+export default Footer;

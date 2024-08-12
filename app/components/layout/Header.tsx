@@ -8,10 +8,7 @@ import {
   Disclosure,
   DisclosureButton,
   DisclosurePanel,
-  Popover,
-  PopoverButton,
   PopoverGroup,
-  PopoverPanel,
 } from '@headlessui/react'
 import {
   Bars3Icon,
@@ -35,7 +32,7 @@ const Header: React.FC = () => {
         <div className="flex lg:flex-1">
           <Link href="/" className="-m-1.5 p-1.5">
             <span className="sr-only">Prune</span>
-            <div className="text-2xl font-bold text-gray-800">Prune</div>
+            <img src="/images/logo.png" alt="Logo" className="h-8 w-auto" />
           </Link>
         </div>
         <div className="flex lg:hidden">
@@ -48,55 +45,22 @@ const Header: React.FC = () => {
             <Bars3Icon aria-hidden="true" className="h-6 w-6" />
           </button>
         </div>
-        <PopoverGroup className="hidden lg:flex lg:gap-x-12">
-          <Popover className="relative">
-            <PopoverButton className="flex items-center gap-x-1 text-sm font-semibold leading-6 text-gray-900">
-              Product
-              <ChevronDownIcon aria-hidden="true" className="h-5 w-5 flex-none text-gray-400" />
-            </PopoverButton>
-
-            <PopoverPanel className="absolute -left-8 top-full z-10 mt-3 w-screen max-w-md overflow-hidden rounded-3xl bg-white shadow-lg ring-1 ring-gray-900/5">
-              <div className="p-4">
-                {products.map((item) => (
-                  <div
-                    key={item.name}
-                    className="group relative flex items-center gap-x-6 rounded-lg p-4 text-sm leading-6 hover:bg-gray-50"
-                  >
-                    <div className="flex h-11 w-11 flex-none items-center justify-center rounded-lg bg-gray-50 group-hover:bg-white">
-                      {/* You can replace this with actual icons if needed */}
-                      <span className="h-6 w-6 text-gray-600 group-hover:text-indigo-600">{item.icon}</span>
-                    </div>
-                    <div className="flex-auto">
-                      <a href={item.href} className="block font-semibold text-gray-900">
-                        {item.name}
-                        <span className="absolute inset-0" />
-                      </a>
-                      <p className="mt-1 text-gray-600">{item.description}</p>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </PopoverPanel>
-          </Popover>
-
+        <div className="hidden lg:flex lg:gap-x-6">
           <Link href="#about" className="text-sm font-semibold leading-6 text-gray-900">
             About
           </Link>
-          <Link href="#pricing" className="text-sm font-semibold leading-6 text-gray-900">
+          <Link href="/pricing" className="text-sm font-semibold leading-6 text-gray-900">
             Pricing
-          </Link>
-          <Link href="#blog" className="text-sm font-semibold leading-6 text-gray-900">
-            Blog
           </Link>
           <Link href="#faqs" className="text-sm font-semibold leading-6 text-gray-900">
             FAQs
           </Link>
-        </PopoverGroup>
-        <div className="hidden lg:flex lg:flex-1 lg:justify-end lg:space-x-4">
-          <Link href="#" className="text-sm font-semibold leading-6 text-gray-900">
+        </div>
+        <div className="hidden lg:flex lg:flex-1 lg:justify-end lg:items-center lg:space-x-4">
+          <Link href="/auth/login" className="text-sm font-semibold leading-6 text-gray-900">
             Log in
           </Link>
-          <Link href="#" className="px-4 py-2 bg-blue-600 text-white rounded-full hover:bg-blue-700 transition-colors duration-300">
+          <Link href="/auth/register" className="px-4 py-2 bg-blue-600 text-white rounded-full hover:bg-blue-700 transition-colors duration-300">
             Get Started
           </Link>
         </div>
@@ -107,7 +71,7 @@ const Header: React.FC = () => {
           <div className="flex items-center justify-between">
             <Link href="/" className="-m-1.5 p-1.5">
               <span className="sr-only">Prune</span>
-              <div className="text-2xl font-bold text-gray-800">Prune</div>
+              <img src="/images/logo.png" alt="Logo" className="h-8 w-auto" />
             </Link>
             <button
               type="button"
@@ -121,24 +85,6 @@ const Header: React.FC = () => {
           <div className="mt-6 flow-root">
             <div className="-my-6 divide-y divide-gray-500/10">
               <div className="space-y-2 py-6">
-                <Disclosure as="div" className="-mx-3">
-                  <DisclosureButton className="flex w-full items-center justify-between rounded-lg py-2 pl-3 pr-3.5 text-base font-semibold leading-7 text-gray-900 hover:bg-gray-50">
-                    Product
-                    <ChevronDownIcon aria-hidden="true" className="h-5 w-5 flex-none" />
-                  </DisclosureButton>
-                  <DisclosurePanel className="mt-2 space-y-2">
-                    {products.map((item) => (
-                      <DisclosureButton
-                        key={item.name}
-                        as="a"
-                        href={item.href}
-                        className="block rounded-lg py-2 pl-6 pr-3 text-sm font-semibold leading-7 text-gray-900 hover:bg-gray-50"
-                      >
-                        {item.name}
-                      </DisclosureButton>
-                    ))}
-                  </DisclosurePanel>
-                </Disclosure>
                 <Link
                   href="#about"
                   className="-mx-3 block rounded-lg px-3 py-2 text-base font-semibold leading-7 text-gray-900 hover:bg-gray-50"
@@ -146,16 +92,10 @@ const Header: React.FC = () => {
                   About
                 </Link>
                 <Link
-                  href="#pricing"
+                  href="/pricing"
                   className="-mx-3 block rounded-lg px-3 py-2 text-base font-semibold leading-7 text-gray-900 hover:bg-gray-50"
                 >
                   Pricing
-                </Link>
-                <Link
-                  href="#blog"
-                  className="-mx-3 block rounded-lg px-3 py-2 text-base font-semibold leading-7 text-gray-900 hover:bg-gray-50"
-                >
-                  Blog
                 </Link>
                 <Link
                   href="#faqs"
@@ -166,13 +106,13 @@ const Header: React.FC = () => {
               </div>
               <div className="py-6">
                 <Link
-                  href="#"
+                  href="/auth/login"
                   className="-mx-3 block rounded-lg px-3 py-2.5 text-base font-semibold leading-7 text-gray-900 hover:bg-gray-50"
                 >
                   Log in
                 </Link>
                 <Link
-                  href="#"
+                  href="/auth/register"
                   className="mt-4 block px-4 py-2 bg-blue-600 text-white rounded-full hover:bg-blue-700 transition-colors duration-300 text-center"
                 >
                   Get Started
