@@ -1,7 +1,10 @@
 'use client';
 
-import React, { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { PaperAirplaneIcon, DocumentPlusIcon, PencilIcon, ListBulletIcon, HashtagIcon, CodeBracketIcon } from '@heroicons/react/24/outline';
+import { createClient } from '@supabase/supabase-js';
+import { useRouter } from 'next/navigation';
+import { getAuth, onAuthStateChanged } from 'firebase/auth'; // Import Firebase Auth
 
 type Message = {
   id: number;
@@ -9,14 +12,40 @@ type Message = {
   sender: 'user' | 'ai';
 };
 
+// Initialize Supabase client
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+const supabase = createClient(supabaseUrl, supabaseKey);
+
 export default function ChatPage() {
-  const [messages, setMessages] = useState<Message[]>([]);
+  const [messages, setMessages] = useState<Message[]>([
+    {
+      id: 1,
+      text: "Hi! I'm here to help you write more clearly. What would you like help with today? Whether you're Jessica planning a flower shop marketing strategy or Kunle developing a menu for Nigerian cuisine, I'm here to assist!",
+      sender: 'ai'
+    }
+  ]);
   const [inputMessage, setInputMessage] = useState('');
   const [isDocumentOpen, setIsDocumentOpen] = useState(true);
   const [documentContent, setDocumentContent] = useState('');
   const [wordCount, setWordCount] = useState(0);
   const [documentTitle, setDocumentTitle] = useState('Untitled Document');
+  const [userId, setUserId] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const router = useRouter();
+
+  // Fetch Firebase User ID
+  useEffect(() => {
+    const auth = getAuth();
+    onAuthStateChanged(auth, (user) => {
+      if (user) {
+        setUserId(user.uid); // Firebase UID
+      } else {
+        console.error('User not authenticated');
+      }
+    });
+  }, []);
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -37,20 +66,39 @@ export default function ChatPage() {
     setInputMessage('');
     updateWordCount(inputMessage);
 
-    // Simulated AI response
-    setTimeout(() => {
+    try {
+      setLoading(true);
+      const response = await fetch('/api/chat', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ action: 'chat', message: inputMessage }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to get AI response');
+      }
+
+      const data = await response.json();
       const aiResponse: Message = {
         id: Date.now(),
-        text: "This is a simulated AI response. In a real application, this would be the response from your AI model.",
+        text: data.response,
         sender: 'ai',
       };
       setMessages(prevMessages => [...prevMessages, aiResponse]);
       updateWordCount(aiResponse.text);
-    }, 1000);
+    } catch (error) {
+      console.error('Error getting AI response:', error);
+      // Handle error (e.g., show an error message to the user)
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleSaveToDocument = (messageText: string) => {
     setDocumentContent(prevContent => prevContent + '\n\n' + messageText);
+    updateWordCount(messageText);
   };
 
   const updateWordCount = (text: string) => {
@@ -58,9 +106,32 @@ export default function ChatPage() {
     setWordCount(prevCount => prevCount + words);
   };
 
-  const handleSaveDocument = () => {
-    // Add logic to save the document (e.g., make an API call)
-    console.log('Document saved:', documentTitle, documentContent);
+  const handleSaveDocument = async () => {
+    if (!userId) {
+      console.error('User ID not available');
+      return;
+    }
+
+    try {
+      setLoading(true);
+      const { data, error } = await supabase
+        .from('documents')
+        .upsert({
+          user_id: userId, // Firebase UID
+          title: documentTitle,
+          content: documentContent,
+        }, { onConflict: 'user_id,title' });
+
+      if (error) throw error;
+
+      console.log('Document saved:', data);
+      router.push('/dashboard/documents');
+    } catch (error) {
+      console.error('Error saving document:', error);
+      // Handle error (e.g., show an error message to the user)
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleTextareaResize = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
@@ -99,14 +170,17 @@ export default function ChatPage() {
                 handleTextareaResize(e);
               }}
               className="w-full flex-1 border rounded p-2 resize-none overflow-y-auto"
-              placeholder="Start writing here..."
+              placeholder="Whether you're crafting a marketing plan for your flower shop or designing a menu for your Nigerian restaurant, start writing your ideas here. Use the chat for inspiration and guidance!"
             />
-            <button
-              onClick={handleSaveDocument}
-              className="mt-4 bg-blue-600 text-white px-4 py-2 rounded-full hover:bg-blue-700 transition-colors duration-300"
-            >
-              Save
-            </button>
+            <div className="flex justify-end mt-4">
+              <button
+                onClick={handleSaveDocument}
+                className="bg-black text-white px-4 py-2 hover:bg-gray-800 transition-colors duration-300"
+                disabled={loading}
+              >
+                {loading ? 'Saving...' : 'Save Document'}
+              </button>
+            </div>
           </div>
         )}
         <div className="w-1/3 flex flex-col relative">
@@ -135,9 +209,9 @@ export default function ChatPage() {
                 value={inputMessage}
                 onChange={(e) => setInputMessage(e.target.value)}
                 className="flex-1 rounded-lg border p-2"
-                placeholder="Ask or search anything"
+                placeholder="Ask about marketing strategies, menu ideas, or any writing assistance..."
               />
-              <button type="submit" className="bg-blue-500 text-white rounded-full p-2">
+              <button type="submit" className="bg-blue-500 text-white rounded-full p-2" disabled={loading}>
                 <PaperAirplaneIcon className="h-5 w-5" />
               </button>
             </div>

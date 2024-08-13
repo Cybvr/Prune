@@ -1,4 +1,3 @@
-// File: app/components/layout/Header.tsx
 'use client';
 
 import React from 'react';
@@ -26,7 +25,7 @@ const Header: React.FC = () => {
   };
 
   return (
-    <header className="bg-white sticky top-0 z-50">
+    <header className="bg-white sticky top-0 z-50 border-b border-zinc-200">
       <nav aria-label="Global" className="mx-auto flex max-w-7xl items-center justify-between p-6 lg:px-8">
         <div className="flex lg:flex-1">
           <Link href="/" className="-m-1.5 p-1.5">
@@ -53,6 +52,9 @@ const Header: React.FC = () => {
           </Link>
           <Link href="/faqs" className="text-sm font-semibold leading-6 text-gray-900 hover:text-gray-600">
             FAQs
+          </Link>
+          <Link href="/use-cases" className="text-sm font-semibold leading-6 text-gray-900 hover:text-gray-600">
+            Use Cases
           </Link>
         </div>
         <div className="hidden lg:flex lg:flex-1 lg:justify-end lg:items-center lg:space-x-4">
@@ -122,6 +124,13 @@ const Header: React.FC = () => {
                   className="-mx-3 block rounded-lg px-3 py-2 text-base font-semibold leading-7 text-gray-900 hover:bg-gray-50"
                 >
                   FAQs
+                </Link>
+                <Link
+                  href="/use-cases"
+                  onClick={closeMobileMenu}
+                  className="-mx-3 block rounded-lg px-3 py-2 text-base font-semibold leading-7 text-gray-900 hover:bg-gray-50"
+                >
+                  Use Cases
                 </Link>
               </div>
               <div className="py-6">
