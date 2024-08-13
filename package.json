@@ -23,6 +23,8 @@
     "react": "18.2.0",
     "react-dom": "18.2.0",
     "react-firebase-hooks": "^5.1.1",
+    "react-spinners": "^0.14.1",
+    "react-spinners-kit": "^1.9.1",
     "styled-components": "^6.1.12",
     "tailwind-merge": "^1.14.0",
     "tailwindcss-animate": "^1.0.7"

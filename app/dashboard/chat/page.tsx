@@ -12,7 +12,7 @@ type Message = {
 export default function ChatPage() {
   const [messages, setMessages] = useState<Message[]>([]);
   const [inputMessage, setInputMessage] = useState('');
-  const [isDocumentOpen, setIsDocumentOpen] = useState(false);
+  const [isDocumentOpen, setIsDocumentOpen] = useState(true);
   const [documentContent, setDocumentContent] = useState('');
   const [wordCount, setWordCount] = useState(0);
   const [documentTitle, setDocumentTitle] = useState('Untitled Document');
@@ -51,7 +51,6 @@ export default function ChatPage() {
 
   const handleSaveToDocument = (messageText: string) => {
     setDocumentContent(prevContent => prevContent + '\n\n' + messageText);
-    setIsDocumentOpen(true);
   };
 
   const updateWordCount = (text: string) => {
@@ -85,7 +84,32 @@ export default function ChatPage() {
         </div>
       </div>
       <div className="flex flex-1 overflow-hidden">
-        <div className="flex-1 flex flex-col relative">
+        {isDocumentOpen && (
+          <div className="flex-1 border-r p-4 flex flex-col">
+            <div className="flex mb-4 space-x-2 overflow-x-auto">
+              <button className="bg-gray-200 text-gray-600 p-2 rounded"><PencilIcon className="h-4 w-4" /></button>
+              <button className="bg-gray-200 text-gray-600 p-2 rounded"><ListBulletIcon className="h-4 w-4" /></button>
+              <button className="bg-gray-200 text-gray-600 p-2 rounded"><HashtagIcon className="h-4 w-4" /></button>
+              <button className="bg-gray-200 text-gray-600 p-2 rounded"><CodeBracketIcon className="h-4 w-4" /></button>
+            </div>
+            <textarea
+              value={documentContent}
+              onChange={(e) => {
+                setDocumentContent(e.target.value);
+                handleTextareaResize(e);
+              }}
+              className="w-full flex-1 border rounded p-2 resize-none overflow-y-auto"
+              placeholder="Start writing here..."
+            />
+            <button
+              onClick={handleSaveDocument}
+              className="mt-4 bg-blue-600 text-white px-4 py-2 rounded-full hover:bg-blue-700 transition-colors duration-300"
+            >
+              Save
+            </button>
+          </div>
+        )}
+        <div className="w-1/3 flex flex-col relative">
           <div className="flex-1 overflow-y-auto p-4 space-y-4 pb-24">
             {messages.map(message => (
               <div key={message.id} className={`flex ${message.sender === 'user' ? 'justify-end' : 'justify-start'}`}>
@@ -119,31 +143,6 @@ export default function ChatPage() {
             </div>
           </form>
         </div>
-        {isDocumentOpen && (
-          <div className="w-1/3 border-l p-4 flex flex-col">
-            <div className="flex mb-4 space-x-2 overflow-x-auto">
-              <button className="bg-gray-200 text-gray-600 p-2 rounded"><PencilIcon className="h-4 w-4" /></button>
-              <button className="bg-gray-200 text-gray-600 p-2 rounded"><ListBulletIcon className="h-4 w-4" /></button>
-              <button className="bg-gray-200 text-gray-600 p-2 rounded"><HashtagIcon className="h-4 w-4" /></button>
-              <button className="bg-gray-200 text-gray-600 p-2 rounded"><CodeBracketIcon className="h-4 w-4" /></button>
-            </div>
-            <textarea
-              value={documentContent}
-              onChange={(e) => {
-                setDocumentContent(e.target.value);
-                handleTextareaResize(e);
-              }}
-              className="w-full flex-1 border rounded p-2 resize-none overflow-y-auto"
-              placeholder="Start writing here..."
-            />
-            <button
-              onClick={handleSaveDocument}
-              className="mt-4 bg-blue-600 text-white px-4 py-2 rounded-full hover:bg-blue-700 transition-colors duration-300"
-            >
-              Save
-            </button>
-          </div>
-        )}
       </div>
     </div>
   );

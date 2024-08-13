@@ -1,4 +1,4 @@
-'use client'
+'use client';
 
 import React, { useEffect } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
@@ -6,6 +6,7 @@ import { useAuthState } from 'react-firebase-hooks/auth';
 import { auth } from './firebase/firebaseConfig';
 import Header from './components/layout/Header';
 import Footer from './components/layout/Footer';
+import { ClipLoader } from 'react-spinners';
 
 export default function ClientLayout({
   children,
@@ -25,7 +26,11 @@ export default function ClientLayout({
   }, [user, loading, isDashboardPage, router]);
 
   if (loading) {
-    return <div>Loading...</div>;
+    return (
+      <div className="flex justify-center items-center min-h-screen">
+        <ClipLoader color="#4A90E2" size={50} />
+      </div>
+    );
   }
 
   return (
