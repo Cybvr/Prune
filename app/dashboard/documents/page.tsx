@@ -1,76 +1,77 @@
+'use client';
 
-// app/dashboard/documents/page.tsx
-import { DocumentTextIcon } from '@heroicons/react/24/outline';
+import React from 'react';
+import Link from 'next/link';
 
-const documents = [
-  { id: 1, name: 'Project Proposal', type: 'PDF', size: '2.4 MB', modified: '2023-06-15' },
-  { id: 2, name: 'Meeting Notes', type: 'DOC', size: '1.2 MB', modified: '2023-06-14' },
-  { id: 3, name: 'Budget Report', type: 'XLS', size: '3.7 MB', modified: '2023-06-13' },
+const ideas = [
+  { id: 1, name: 'Brainstorm Ideas for Brew & Beans', timestamp: 'Yesterday at 8:09 PM' },
+  { id: 2, name: 'Menu Redesign', timestamp: 'Today at 10:15 AM' },
+  { id: 3, name: 'Customer Loyalty Program', timestamp: 'August 10 at 3:45 PM' },
+  { id: 4, name: 'Social Media Campaign', timestamp: 'August 9 at 6:30 PM' },
+  { id: 5, name: 'Local Community Events', timestamp: 'August 8 at 12:20 PM' },
 ];
 
-export default function DocumentsPage() {
+export default function IdeasPage() {
   return (
     <div>
-      <div className="sm:flex sm:items-center">
-        <div className="sm:flex-auto">
-          <h1 className="text-base font-semibold leading-6 text-gray-900">Documents</h1>
-          <p className="mt-2 text-sm text-gray-700">A list of all your documents including their name, type, size, and modification date.</p>
+      <div className="sm:flex sm:items-center sm:justify-between">
+        <div>
+          <h1 className="text-xl font-semibold text-gray-900">Ideas</h1>
+          <p className="mt-2 text-sm text-gray-700">A collection of all your innovative ideas.</p>
         </div>
-        <div className="mt-4 sm:ml-16 sm:mt-0 sm:flex-none">
-          <button
-            type="button"
-            className="block rounded-md bg-indigo-600 px-3 py-2 text-center text-sm font-semibold text-white shadow-sm hover:bg-indigo-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
+        <div className="mt-4 sm:mt-0">
+          <Link
+            href="/dashboard/chat"
+            className="inline-flex items-center rounded-md bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-600"
           >
-            Upload document
-          </button>
+            New Idea
+          </Link>
         </div>
       </div>
-      <div className="mt-8 flow-root">
-        <div className="-mx-4 -my-2 overflow-x-auto sm:-mx-6 lg:-mx-8">
-          <div className="inline-block min-w-full py-2 align-middle sm:px-6 lg:px-8">
-            <table className="min-w-full divide-y divide-gray-300">
-              <thead>
-                <tr>
-                  <th scope="col" className="py-3.5 pl-4 pr-3 text-left text-sm font-semibold text-gray-900 sm:pl-0">
-                    Name
-                  </th>
-                  <th scope="col" className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">
-                    Type
-                  </th>
-                  <th scope="col" className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">
-                    Size
-                  </th>
-                  <th scope="col" className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">
-                    Modified
-                  </th>
-                  <th scope="col" className="relative py-3.5 pl-3 pr-4 sm:pr-0">
-                    <span className="sr-only">View</span>
-                  </th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-200">
-                {documents.map((document) => (
-                  <tr key={document.id}>
-                    <td className="whitespace-nowrap py-4 pl-4 pr-3 text-sm font-medium text-gray-900 sm:pl-0">
-                      <div className="flex items-center">
-                        <DocumentTextIcon className="h-5 w-5 flex-shrink-0 text-gray-400" aria-hidden="true" />
-                        <span className="ml-2">{document.name}</span>
-                      </div>
-                    </td>
-                    <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500">{document.type}</td>
-                    <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500">{document.size}</td>
-                    <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500">{document.modified}</td>
-                    <td className="relative whitespace-nowrap py-4 pl-3 pr-4 text-right text-sm font-medium sm:pr-0">
-                      <a href="#" className="text-indigo-600 hover:text-indigo-900">
-                        View<span className="sr-only">, {document.name}</span>
-                      </a>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+
+      <div className="mt-6 flex justify-between items-center">
+        <input
+          type="text"
+          placeholder="Search"
+          className="p-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-indigo-600"
+        />
+        <div className="flex items-center space-x-2">
+          <button className="p-2 text-gray-500 hover:text-gray-700">
+            <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
+              <path d="M4 6h12M4 10h12m-7 4h7"></path>
+            </svg>
+          </button>
+          <button className="p-2 text-gray-500 hover:text-gray-700">
+            <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
+              <path d="M4 4h4v4H4V4zM4 12h4v4H4v-4zM12 4h4v4h-4V4zM12 12h4v4h-4v-4z"></path>
+            </svg>
+          </button>
+          <select className="p-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-indigo-600">
+            <option>Last modified</option>
+            <option>Alphabetical</option>
+            <option>Most popular</option>
+            <option>Recently added</option>
+          </select>
         </div>
+      </div>
+
+      <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        {ideas.map((idea) => (
+          <div
+            key={idea.id}
+            className="bg-white shadow rounded-lg p-6 flex flex-col justify-between h-32 transition-shadow hover:shadow-lg"
+          >
+            <div className="flex justify-between items-center">
+              <div className="text-lg font-medium text-gray-900">{idea.name}</div>
+              <button className="text-gray-500 hover:text-gray-700">
+                <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
+                  <path d="M6 10a2 2 0 114 0 2 2 0 01-4 0zM2 10a2 2 0 114 0 2 2 0 01-4 0zM10 10a2 2 0 114 0 2 2 0 01-4 0z"></path>
+                </svg>
+              </button>
+            </div>
+            <div className="text-sm text-zinc-500 mt-4">{idea.timestamp}</div>
+          </div>
+        ))}
       </div>
     </div>
   );
