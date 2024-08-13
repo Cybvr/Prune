@@ -22,6 +22,7 @@ export default function DocumentsPage() {
   const [searchTerm, setSearchTerm] = useState('');
   const [sortOption, setSortOption] = useState('last_modified');
   const [userId, setUserId] = useState<string | null>(null);
+  const [contextMenu, setContextMenu] = useState<{ id: string; top: number; left: number } | null>(null);
 
   useEffect(() => {
     const auth = getAuth();
@@ -68,12 +69,49 @@ export default function DocumentsPage() {
     doc.title.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
+  const handleContextMenu = (event: React.MouseEvent, docId: string) => {
+    event.preventDefault();
+    setContextMenu({ id: docId, top: event.clientY, left: event.clientX });
+  };
+
+  const closeContextMenu = () => {
+    setContextMenu(null);
+  };
+
+  const handleDelete = async (docId: string) => {
+    try {
+      const { error } = await supabase
+        .from('documents')
+        .delete()
+        .eq('id', docId);
+      if (error) throw error;
+      setDocuments(documents.filter(doc => doc.id !== docId));
+      closeContextMenu();
+    } catch (error) {
+      console.error('Error deleting document:', error);
+    }
+  };
+
+  const handleRename = async (docId: string, newTitle: string) => {
+    try {
+      const { error } = await supabase
+        .from('documents')
+        .update({ title: newTitle })
+        .eq('id', docId);
+      if (error) throw error;
+      setDocuments(documents.map(doc => (doc.id === docId ? { ...doc, title: newTitle } : doc)));
+      closeContextMenu();
+    } catch (error) {
+      console.error('Error renaming document:', error);
+    }
+  };
+
   return (
     <div>
       <div className="sm:flex sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-xl font-semibold text-gray-900">Documents</h1>
-          <p className="mt-2 text-sm text-gray-700">A collection of all your documents.</p>
+          <h1 className="text-2xl font-bold text-gray-900">Documents</h1>
+          <p className="mt-2 text-sm text-gray-600">A collection of all your documents.</p>
         </div>
         <div className="mt-4 sm:mt-0">
           <Link href="/dashboard/chat" className="inline-flex items-center rounded-md bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-600">
@@ -116,27 +154,52 @@ export default function DocumentsPage() {
       {isLoading ? (
         <div className="mt-6 text-center">Loading documents...</div>
       ) : (
-        <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        <div className="mt-6 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
           {filteredDocuments.map((doc) => (
-            <div key={doc.id} className="bg-white shadow rounded-lg p-6 flex flex-col justify-between h-32 transition-shadow hover:shadow-lg">
+            <div
+              key={doc.id}
+              className="bg-white shadow rounded-lg p-6 flex flex-col justify-between h-full transition-shadow hover:shadow-lg cursor-pointer"
+              onContextMenu={(e) => handleContextMenu(e, doc.id)}
+              onClick={() => window.location.href = `/dashboard/documents/edit/${doc.id}`}
+            >
               <div className="flex justify-between items-center">
-                <div className="text-lg font-medium text-gray-900">{doc.title}</div>
-                <div className="flex space-x-2">
-                  <Link href={`/dashboard/documents/edit/${doc.id}`} className="text-indigo-600 hover:text-indigo-900">
-                    Edit
-                  </Link>
-                  <button className="text-gray-500 hover:text-gray-700">
-                    <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
-                      <path d="M6 10a2 2 0 114 0 2 2 0 01-4 0zM2 10a2 2 0 114 0 2 2 0 01-4 0zM10 10a2 2 0 114 0 2 2 0 01-4 0z"></path>
-                    </svg>
-                  </button>
-                </div>
+                <div className="text-lg font-semibold text-gray-900">{doc.title}</div>
+                <button className="text-gray-500 hover:text-gray-700">
+                  <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M10 12a2 2 0 110-4 2 2 0 010 4zm0-6a2 2 0 110-4 2 2 0 010 4zm0 12a2 2 0 110-4 2 2 0 010 4z"></path>
+                  </svg>
+                </button>
               </div>
-              <div className="text-sm text-zinc-500 mt-4">
+              <div className="text-sm text-gray-500 mt-4">
                 {new Date(doc.created_at).toLocaleString()}
               </div>
             </div>
           ))}
+        </div>
+      )}
+      {contextMenu && (
+        <div
+          className="fixed bg-white shadow rounded-lg p-2 flex flex-col space-y-2"
+          style={{ top: contextMenu.top, left: contextMenu.left }}
+          onClick={closeContextMenu}
+        >
+          <button
+            className="text-red-600 hover:text-red-800"
+            onClick={() => handleDelete(contextMenu.id)}
+          >
+            Delete
+          </button>
+          <button
+            className="text-blue-600 hover:text-blue-800"
+            onClick={() => {
+              const newTitle = prompt('Enter new title:', documents.find(doc => doc.id === contextMenu.id)?.title);
+              if (newTitle) {
+                handleRename(contextMenu.id, newTitle);
+              }
+            }}
+          >
+            Rename
+          </button>
         </div>
       )}
     </div>

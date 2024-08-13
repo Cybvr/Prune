@@ -36,7 +36,23 @@ export default function EditDocumentPage({ params }: { params: { id: string } })
   }, [params.id]);
 
   const fetchDocument = async (uid: string, docId: string) => {
-    // ... (keep this function as is)
+    try {
+      const { data: document, error } = await supabase
+        .from('documents')
+        .select('title, content')
+        .eq('user_id', uid)
+        .eq('id', docId)
+        .single();
+
+      if (error) throw error;
+
+      setTitle(document.title);
+      setContent(document.content);
+    } catch (error) {
+      console.error('Error fetching document:', error);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const handleSave = async () => {
@@ -78,16 +94,17 @@ export default function EditDocumentPage({ params }: { params: { id: string } })
         initialValue={content}
         init={{
           height: 500,
-          menubar: false,
+          branding: false,
+          menubar: true,
           plugins: [
-            'advlist autolink lists link image charmap print preview anchor',
-            'searchreplace visualblocks code fullscreen',
-            'insertdatetime media table paste code help wordcount'
+            'advlist', 'autolink', 'lists', 'link', 'image', 'charmap',
+            'preview', 'anchor', 'searchreplace', 'visualblocks', 'code',
+            'fullscreen', 'insertdatetime', 'media', 'table', 'code', 'help',
+            'wordcount', 'anchor', 'emoticons', 'visualblocks'
           ],
-          toolbar: 'undo redo | formatselect | ' +
-          'bold italic backcolor | alignleft aligncenter ' +
-          'alignright alignjustify | bullist numlist outdent indent | ' +
-          'removeformat | help',
+          toolbar: 'undo redo | blocks | bold italic forecolor | alignleft aligncenter ' +
+                   'alignright alignjustify | bullist numlist outdent indent | ' +
+                   'removeformat | help',
           content_style: 'body { font-family:Helvetica,Arial,sans-serif; font-size:14px }'
         }}
       />
