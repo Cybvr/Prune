@@ -4,7 +4,7 @@ import { useState, useRef, useEffect } from 'react';
 import { PaperAirplaneIcon, DocumentPlusIcon, PencilIcon, ListBulletIcon, HashtagIcon, CodeBracketIcon } from '@heroicons/react/24/outline';
 import { createClient } from '@supabase/supabase-js';
 import { useRouter } from 'next/navigation';
-import { getAuth, onAuthStateChanged } from 'firebase/auth'; // Import Firebase Auth
+import { getAuth, onAuthStateChanged } from 'firebase/auth';
 
 type Message = {
   id: number;
@@ -21,7 +21,7 @@ export default function ChatPage() {
   const [messages, setMessages] = useState<Message[]>([
     {
       id: 1,
-      text: "Hi! I'm here to help you write more clearly. What would you like help with today? Whether you're Jessica planning a flower shop marketing strategy or Kunle developing a menu for Nigerian cuisine, I'm here to assist!",
+      text: "Hi! I'm Prune, your AI-powered reading assistant. How can I help you analyze and summarize text today?",
       sender: 'ai'
     }
   ]);
@@ -35,62 +35,49 @@ export default function ChatPage() {
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const router = useRouter();
 
-  // Fetch Firebase User ID
   useEffect(() => {
     const auth = getAuth();
-    onAuthStateChanged(auth, (user) => {
+    const unsubscribe = onAuthStateChanged(auth, (user) => {
       if (user) {
-        setUserId(user.uid); // Firebase UID
+        setUserId(user.uid);
       } else {
         console.error('User not authenticated');
+        // You might want to redirect to a login page here
+        // router.push('/login');
       }
     });
+
+    return () => unsubscribe();
   }, []);
 
-  const scrollToBottom = () => {
+  useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  };
-
-  useEffect(scrollToBottom, [messages]);
+  }, [messages]);
 
   const handleSendMessage = async (e: React.FormEvent) => {
     e.preventDefault();
     if (inputMessage.trim() === '') return;
 
-    const newMessage: Message = {
-      id: Date.now(),
-      text: inputMessage,
-      sender: 'user',
-    };
+    const newMessage: Message = { id: Date.now(), text: inputMessage, sender: 'user' };
     setMessages(prevMessages => [...prevMessages, newMessage]);
     setInputMessage('');
-    updateWordCount(inputMessage);
 
     try {
       setLoading(true);
       const response = await fetch('/api/chat', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ action: 'chat', message: inputMessage }),
       });
 
-      if (!response.ok) {
-        throw new Error('Failed to get AI response');
-      }
+      if (!response.ok) throw new Error('Failed to get AI response');
 
       const data = await response.json();
-      const aiResponse: Message = {
-        id: Date.now(),
-        text: data.response,
-        sender: 'ai',
-      };
+      const aiResponse: Message = { id: Date.now(), text: data.response, sender: 'ai' };
       setMessages(prevMessages => [...prevMessages, aiResponse]);
-      updateWordCount(aiResponse.text);
     } catch (error) {
       console.error('Error getting AI response:', error);
-      // Handle error (e.g., show an error message to the user)
+      // TODO: Show error message to the user
     } finally {
       setLoading(false);
     }
@@ -98,12 +85,12 @@ export default function ChatPage() {
 
   const handleSaveToDocument = (messageText: string) => {
     setDocumentContent(prevContent => prevContent + '\n\n' + messageText);
-    updateWordCount(messageText);
+    updateWordCount(documentContent + '\n\n' + messageText);
   };
 
   const updateWordCount = (text: string) => {
     const words = text.trim().split(/\s+/).length;
-    setWordCount(prevCount => prevCount + words);
+    setWordCount(words);
   };
 
   const handleSaveDocument = async () => {
@@ -114,29 +101,44 @@ export default function ChatPage() {
 
     try {
       setLoading(true);
-      const { data, error } = await supabase
+
+      const { data: existingDocs, error: fetchError } = await supabase
         .from('documents')
-        .upsert({
-          user_id: userId, // Firebase UID
-          title: documentTitle,
-          content: documentContent,
-        }, { onConflict: 'user_id,title' });
+        .select('id')
+        .eq('user_id', userId)
+        .eq('title', documentTitle);
 
-      if (error) throw error;
+      if (fetchError) throw fetchError;
 
-      console.log('Document saved:', data);
+      let result;
+      if (existingDocs && existingDocs.length > 0) {
+        result = await supabase
+          .from('documents')
+          .update({ 
+            content: documentContent, 
+            updated_at: new Date().toISOString() 
+          })
+          .eq('id', existingDocs[0].id);
+      } else {
+        result = await supabase
+          .from('documents')
+          .insert({
+            user_id: userId,
+            title: documentTitle,
+            content: documentContent,
+          });
+      }
+
+      if (result.error) throw result.error;
+
+      console.log('Document saved:', result.data);
       router.push('/dashboard/documents');
     } catch (error) {
       console.error('Error saving document:', error);
-      // Handle error (e.g., show an error message to the user)
+      // TODO: Show error message to the user
     } finally {
       setLoading(false);
     }
-  };
-
-  const handleTextareaResize = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
-    e.target.style.height = 'auto';
-    e.target.style.height = e.target.scrollHeight + 'px';
   };
 
   return (
@@ -167,10 +169,10 @@ export default function ChatPage() {
               value={documentContent}
               onChange={(e) => {
                 setDocumentContent(e.target.value);
-                handleTextareaResize(e);
+                updateWordCount(e.target.value);
               }}
               className="w-full flex-1 border rounded p-2 resize-none overflow-y-auto"
-              placeholder="Whether you're crafting a marketing plan for your flower shop or designing a menu for your Nigerian restaurant, start writing your ideas here. Use the chat for inspiration and guidance!"
+              placeholder="Paste your text here for analysis and summarization. Use the chat for assistance and insights."
             />
             <div className="flex justify-end mt-4">
               <button
@@ -209,7 +211,7 @@ export default function ChatPage() {
                 value={inputMessage}
                 onChange={(e) => setInputMessage(e.target.value)}
                 className="flex-1 rounded-lg border p-2"
-                placeholder="Ask about marketing strategies, menu ideas, or any writing assistance..."
+                placeholder="Ask for text analysis, summarization, or any assistance..."
               />
               <button type="submit" className="bg-blue-500 text-white rounded-full p-2" disabled={loading}>
                 <PaperAirplaneIcon className="h-5 w-5" />

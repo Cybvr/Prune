@@ -35,6 +35,12 @@ export default function DashboardLayout({ children }) {
     return () => window.removeEventListener('resize', handleResize);
   }, []);
 
+  const handleLinkClick = () => {
+    if (window.innerWidth < 1024) {
+      setSidebarOpen(false);
+    }
+  };
+
   return (
     <div className="flex h-screen">
       {/* Mobile and small screen header */}
@@ -79,6 +85,7 @@ export default function DashboardLayout({ children }) {
               <Link
                 key={item.name}
                 href={item.href}
+                onClick={handleLinkClick}
                 className={`flex items-center px-2 py-2 text-sm font-medium rounded-md ${pathname === item.href ? 'bg-gray-200 dark:bg-gray-700 text-gray-900 dark:text-gray-100' : 'text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700'}`}
               >
                 <item.icon className="mr-3 h-6 w-6" aria-hidden="true" />
@@ -89,6 +96,7 @@ export default function DashboardLayout({ children }) {
           <div className="flex-shrink-0 p-4 border-t border-gray-200 dark:border-zinc-700">
             <Link
               href="/dashboard/settings"
+              onClick={handleLinkClick}
               className="flex items-center px-2 py-2 text-sm font-medium rounded-md text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700"
             >
               <Cog6ToothIcon className="mr-3 h-6 w-6" aria-hidden="true" />
