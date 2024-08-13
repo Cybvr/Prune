@@ -4,6 +4,9 @@ const nextConfig = {
   env: {
     CLAUDE_API_KEY: process.env.CLAUDE_API_KEY,
   },
-};
+  images: {
+    domains: ['lh3.googleusercontent.com'], // This allows loading Google user profile images
+  },
+}
 
-module.exports = nextConfig;
+module.exports = nextConfig

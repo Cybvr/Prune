@@ -1,59 +1,39 @@
-"use client";
-
-import { Disclosure, DisclosureButton, DisclosurePanel } from '@headlessui/react';
-import { MinusSmallIcon, PlusSmallIcon } from '@heroicons/react/24/outline';
+import React from 'react';
 
 const faqs = [
   {
     question: "What is Prune?",
-    answer:
-      "Prune is an AI-powered reading assistant that quickly analyzes and summarizes text. Using advanced natural language processing, it extracts key information, providing users with concise summaries, important keywords, and text statistics. Prune helps you efficiently digest and understand written content, saving time and enhancing comprehension.",
+    answer: "Prune is an AI-powered writing tool designed to help you document, organize, learn about, and execute your ideas more effectively."
   },
   {
     question: "How does Prune work?",
-    answer:
-      "Prune uses advanced natural language processing to analyze and summarize text. It extracts key information and provides users with concise summaries, important keywords, and text statistics. This helps users efficiently digest and understand written content, saving time and enhancing comprehension.",
+    answer: "Prune uses advanced AI algorithms to analyze your writing, provide suggestions, and help you structure your thoughts. It offers features like content summarization, idea generation, and writing style improvement."
   },
   {
-    question: "What are the benefits of using Prune?",
-    answer:
-      "Prune helps you efficiently digest and understand written content by providing concise summaries, important keywords, and text statistics. This saves time and enhances comprehension, making it easier to manage and understand large amounts of text.",
+    question: "Is Prune free to use?",
+    answer: "Prune offers a free tier with basic features. We also have premium plans with advanced capabilities for power users and teams. Check our pricing page for more details."
   },
-  // More questions...
+  {
+    question: "Can Prune integrate with other writing tools?",
+    answer: "Yes, Prune can integrate with popular writing and productivity tools. We're constantly expanding our integration options. Please check our documentation for the latest list of supported integrations."
+  },
+  {
+    question: "Is my data safe with Prune?",
+    answer: "Absolutely. We take data privacy and security very seriously. All your data is encrypted, and we never share or sell your information. You can read more about our privacy practices in our Privacy Policy."
+  }
 ];
 
-export default function Example() {
+export default function FAQsPage() {
   return (
-    <div className="bg-white">
-      <div className="mx-auto max-w-7xl px-6 py-24 sm:py-32 lg:px-8 lg:py-40">
-        <div className="mx-auto max-w-4xl divide-y divide-gray-900/10">
-          <h2 className="text-2xl font-bold leading-10 tracking-tight text-gray-900">Frequently asked questions</h2>
-          <dl className="mt-10 space-y-6 divide-y divide-gray-900/10">
-            {faqs.map((faq) => (
-              <Disclosure as="div" key={faq.question} className="pt-6">
-                {({ open }) => (
-                  <>
-                    <dt>
-                      <DisclosureButton className="flex w-full items-start justify-between text-left text-gray-900">
-                        <span className="text-base font-semibold leading-7">{faq.question}</span>
-                        <span className="ml-6 flex h-7 items-center">
-                          {open ? (
-                            <MinusSmallIcon className="h-6 w-6" aria-hidden="true" />
-                          ) : (
-                            <PlusSmallIcon className="h-6 w-6" aria-hidden="true" />
-                          )}
-                        </span>
-                      </DisclosureButton>
-                    </dt>
-                    <DisclosurePanel as="dd" className="mt-2 pr-12">
-                      <p className="text-base leading-7 text-gray-600">{faq.answer}</p>
-                    </DisclosurePanel>
-                  </>
-                )}
-              </Disclosure>
-            ))}
-          </dl>
-        </div>
+    <div className="container mx-auto px-4 py-8">
+      <h1 className="text-3xl font-bold mb-8 text-center">Frequently Asked Questions</h1>
+      <div className="space-y-6">
+        {faqs.map((faq, index) => (
+          <div key={index} className="bg-white shadow-md rounded-lg p-6">
+            <h2 className="text-xl font-semibold mb-2">{faq.question}</h2>
+            <p className="text-gray-600">{faq.answer}</p>
+          </div>
+        ))}
       </div>
     </div>
   );

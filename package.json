@@ -17,10 +17,13 @@
     "clsx": "^2.0.0",
     "debug": "^4.3.6",
     "dotenv": "^16.4.5",
+    "firebase": "^10.12.5",
     "lucide-react": "^0.263.1",
     "next": "13.4.19",
     "react": "18.2.0",
     "react-dom": "18.2.0",
+    "react-firebase-hooks": "^5.1.1",
+    "styled-components": "^6.1.12",
     "tailwind-merge": "^1.14.0",
     "tailwindcss-animate": "^1.0.7"
   },

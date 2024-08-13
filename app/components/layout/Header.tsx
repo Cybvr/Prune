@@ -1,10 +1,29 @@
+// File: app/components/layout/Header.tsx
+'use client';
+
 import React from 'react';
 import Link from 'next/link';
+import { useAuthState } from 'react-firebase-hooks/auth';
+import { auth } from '../../firebase/firebaseConfig';
 import { Bars3Icon, XMarkIcon } from '@heroicons/react/24/outline';
-import { Dialog, DialogPanel } from '@headlessui/react'; // You should ensure these imports if not already existing
+import { Dialog, DialogPanel } from '@headlessui/react';
 
 const Header: React.FC = () => {
-  const [mobileMenuOpen, setMobileMenuOpen] = React.useState(false); // Ensure you have the state management
+  const [mobileMenuOpen, setMobileMenuOpen] = React.useState(false);
+  const [user, loading] = useAuthState(auth);
+
+  const handleLogout = async () => {
+    try {
+      await auth.signOut();
+      closeMobileMenu();
+    } catch (error) {
+      console.error('Failed to log out', error);
+    }
+  };
+
+  const closeMobileMenu = () => {
+    setMobileMenuOpen(false);
+  };
 
   return (
     <header className="bg-white sticky top-0 z-50">
@@ -32,24 +51,42 @@ const Header: React.FC = () => {
           <Link href="/pricing" className="text-sm font-semibold leading-6 text-gray-900 hover:text-gray-600">
             Pricing
           </Link>
-          <Link href="#faqs" className="text-sm font-semibold leading-6 text-gray-900 hover:text-gray-600">
+          <Link href="/faqs" className="text-sm font-semibold leading-6 text-gray-900 hover:text-gray-600">
             FAQs
           </Link>
         </div>
         <div className="hidden lg:flex lg:flex-1 lg:justify-end lg:items-center lg:space-x-4">
-          <Link href="/auth/login" className="text-sm font-semibold leading-6 text-gray-900 hover:text-gray-600">
-            Log in
-          </Link>
-          <Link href="/auth/register" className="px-4 py-2 bg-blue-600 text-white text-sm font-semibold hover:bg-blue-700 transition-colors duration-300">
-            Get Started
-          </Link>
+          {!loading && (
+            user ? (
+              <>
+                <Link href="/dashboard" className="text-sm font-semibold leading-6 text-gray-900 hover:text-gray-600">
+                  Dashboard
+                </Link>
+                <button
+                  onClick={handleLogout}
+                  className="text-sm font-semibold leading-6 text-gray-900 hover:text-gray-600"
+                >
+                  Log out
+                </button>
+              </>
+            ) : (
+              <>
+                <Link href="/auth/login" className="text-sm font-semibold leading-6 text-gray-900 hover:text-gray-600">
+                  Log in
+                </Link>
+                <Link href="/auth/register" className="px-4 py-2 bg-blue-600 text-white text-sm font-semibold hover:bg-blue-700 transition-colors duration-300">
+                  Get Started
+                </Link>
+              </>
+            )
+          )}
         </div>
       </nav>
       <Dialog open={mobileMenuOpen} onClose={setMobileMenuOpen} className="lg:hidden">
         <div className="fixed inset-0 z-10" />
         <DialogPanel className="fixed inset-y-0 right-0 z-10 w-full overflow-y-auto bg-white px-6 py-6 sm:max-w-sm sm:ring-1 sm:ring-gray-900/10">
           <div className="flex items-center justify-between">
-            <Link href="/" className="-m-1.5 p-1.5">
+            <Link href="/" onClick={closeMobileMenu} className="-m-1.5 p-1.5">
               <span className="sr-only">Prune</span>
               <img src="/images/logo.png" alt="Logo" className="h-8 w-auto" />
             </Link>
@@ -67,36 +104,63 @@ const Header: React.FC = () => {
               <div className="space-y-2 py-6">
                 <Link
                   href="/about"
+                  onClick={closeMobileMenu}
                   className="-mx-3 block rounded-lg px-3 py-2 text-base font-semibold leading-7 text-gray-900 hover:bg-gray-50"
                 >
                   About
                 </Link>
                 <Link
                   href="/pricing"
+                  onClick={closeMobileMenu}
                   className="-mx-3 block rounded-lg px-3 py-2 text-base font-semibold leading-7 text-gray-900 hover:bg-gray-50"
                 >
                   Pricing
                 </Link>
                 <Link
-                  href="#faqs"
+                  href="/faqs"
+                  onClick={closeMobileMenu}
                   className="-mx-3 block rounded-lg px-3 py-2 text-base font-semibold leading-7 text-gray-900 hover:bg-gray-50"
                 >
                   FAQs
                 </Link>
               </div>
               <div className="py-6">
-                <Link
-                  href="/auth/login"
-                  className="-mx-3 block rounded-lg px-3 py-2.5 text-base font-semibold leading-7 text-gray-900 hover:bg-gray-50"
-                >
-                  Log in
-                </Link>
-                <Link
-                  href="/auth/register"
-                  className="mt-4 block px-4 py-2 bg-blue-600 text-white text-base font-semibold hover:bg-blue-700 transition-colors duration-300 text-center"
-                >
-                  Get Started
-                </Link>
+                {!loading && (
+                  user ? (
+                    <>
+                      <Link
+                        href="/dashboard"
+                        onClick={closeMobileMenu}
+                        className="-mx-3 block rounded-lg px-3 py-2.5 text-base font-semibold leading-7 text-gray-900 hover:bg-gray-50"
+                      >
+                        Dashboard
+                      </Link>
+                      <button
+                        onClick={handleLogout}
+                        className="-mx-3 block rounded-lg px-3 py-2.5 text-base font-semibold leading-7 text-gray-900 hover:bg-gray-50 w-full text-left"
+                      >
+                        Log out
+                      </button>
+                    </>
+                  ) : (
+                    <>
+                      <Link
+                        href="/auth/login"
+                        onClick={closeMobileMenu}
+                        className="-mx-3 block rounded-lg px-3 py-2.5 text-base font-semibold leading-7 text-gray-900 hover:bg-gray-50"
+                      >
+                        Log in
+                      </Link>
+                      <Link
+                        href="/auth/register"
+                        onClick={closeMobileMenu}
+                        className="mt-4 block px-4 py-2 bg-blue-600 text-white text-base font-semibold hover:bg-blue-700 transition-colors duration-300 text-center"
+                      >
+                        Get Started
+                      </Link>
+                    </>
+                  )
+                )}
               </div>
             </div>
           </div>

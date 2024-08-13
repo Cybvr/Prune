@@ -24,8 +24,6 @@ const navigation = [
   { name: 'Dashboard', href: '/dashboard', icon: HomeIcon },
   { name: 'My Ideas', href: '/dashboard/ideas', icon: LightBulbIcon },
   { name: 'Documents', href: '/dashboard/documents', icon: DocumentTextIcon },
-  { name: 'Learn', href: '/dashboard/learn', icon: AcademicCapIcon },
-  { name: 'Execute', href: '/dashboard/execute', icon: RocketLaunchIcon },
   { name: 'Chat', href: '/dashboard/chat', icon: ChatBubbleLeftEllipsisIcon }
 ];
 
