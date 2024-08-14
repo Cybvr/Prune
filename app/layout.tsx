@@ -1,10 +1,15 @@
 import React from 'react';
-import { Inter } from "next/font/google";
+import { Inter, IBM_Plex_Sans } from "next/font/google";
 import type { Metadata } from 'next';
 import "./styles/globals.css";
 import ClientLayout from './ClientLayout';
 
 const inter = Inter({ subsets: ["latin"] });
+const ibmPlex = IBM_Plex_Sans({ 
+  weight: ['400', '700'],
+  subsets: ["latin"],
+  variable: '--font-ibm-plex',
+});
 
 export const metadata: Metadata = {
   title: "Prune",
@@ -21,7 +26,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en">
+    <html lang="en" className={`${ibmPlex.variable} font-sans`}>
       <body className={inter.className}>
         <ClientLayout>{children}</ClientLayout>
       </body>
