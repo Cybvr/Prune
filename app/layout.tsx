@@ -1,8 +1,12 @@
+// @app/layout.tsx
 import React from 'react';
 import { Inter, IBM_Plex_Sans } from "next/font/google";
 import type { Metadata } from 'next';
 import "./styles/globals.css";
-import ClientLayout from './ClientLayout';
+import dynamic from 'next/dynamic';
+import '@/app/styles/quill.css'
+
+const ClientWrapper = dynamic(() => import('./ClientWrapper'), { ssr: false });
 
 const inter = Inter({ subsets: ["latin"] });
 const ibmPlex = IBM_Plex_Sans({ 
@@ -28,7 +32,7 @@ export default function RootLayout({
   return (
     <html lang="en" className={`${ibmPlex.variable} font-sans`}>
       <body className={inter.className}>
-        <ClientLayout>{children}</ClientLayout>
+        <ClientWrapper>{children}</ClientWrapper>
       </body>
     </html>
   );

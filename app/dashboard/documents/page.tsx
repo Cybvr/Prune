@@ -1,28 +1,29 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
-import Link from 'next/link';
-import { createClient } from '@supabase/supabase-js';
+import React, { useState, useEffect, useCallback } from 'react';
+import { useRouter } from 'next/router'; // Import useRouter
+import { collection, query, where, getDocs, deleteDoc, doc } from 'firebase/firestore';
 import { getAuth, onAuthStateChanged } from 'firebase/auth';
-
-// Initialize Supabase client
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
-const supabase = createClient(supabaseUrl, supabaseKey);
+import { db } from '@/firebase/firebaseConfig';
+import { ClipLoader } from 'react-spinners';
+import { DocumentIcon, TrashIcon } from '@heroicons/react/24/outline';
+import debounce from 'lodash/debounce';
+import Link from 'next/link';
 
 type Document = {
   id: string;
   title: string;
-  created_at: string;
+  createdAt: Date;
+  updatedAt: Date;
 };
 
-export default function DocumentsPage() {
+const DocumentsPage: React.FC = () => {
   const [documents, setDocuments] = useState<Document[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [searchTerm, setSearchTerm] = useState('');
-  const [sortOption, setSortOption] = useState('last_modified');
   const [userId, setUserId] = useState<string | null>(null);
-  const [contextMenu, setContextMenu] = useState<{ id: string; top: number; left: number } | null>(null);
+  const [searchTerm, setSearchTerm] = useState<string>('');
+  const [selectedDocuments, setSelectedDocuments] = useState<Set<string>>(new Set());
+  const router = useRouter();
 
   useEffect(() => {
     const auth = getAuth();
@@ -31,33 +32,32 @@ export default function DocumentsPage() {
         setUserId(user.uid);
         fetchDocuments(user.uid);
       } else {
-        console.error('User not authenticated');
         setIsLoading(false);
+        router.push('/auth/login');
       }
     });
 
     return () => unsubscribe();
-  }, [sortOption]);
+  }, [router]);
 
   const fetchDocuments = async (uid: string) => {
     try {
       setIsLoading(true);
-      let query = supabase
-        .from('documents')
-        .select('id, title, created_at, updated_at')
-        .eq('user_id', uid);
-
-      if (sortOption === 'last_modified') {
-        query = query.order('updated_at', { ascending: false });
-      } else if (sortOption === 'alphabetical') {
-        query = query.order('title');
-      } else if (sortOption === 'recently_added') {
-        query = query.order('created_at', { ascending: false });
-      }
-
-      const { data, error } = await query;
-      if (error) throw error;
-      setDocuments(data || []);
+      const q = query(
+        collection(db, 'documents'),
+        where('userId', '==', uid)
+      );
+      const querySnapshot = await getDocs(q);
+      const docs = querySnapshot.docs.map(doc => {
+        const data = doc.data();
+        return {
+          id: doc.id,
+          title: data.title,
+          createdAt: new Date(data.createdAt),
+          updatedAt: new Date(data.updatedAt),
+        } as Document;
+      });
+      setDocuments(docs);
     } catch (error) {
       console.error('Error fetching documents:', error);
     } finally {
@@ -65,143 +65,144 @@ export default function DocumentsPage() {
     }
   };
 
-  const filteredDocuments = documents.filter(doc =>
+  const handleDelete = async () => {
+    if (window.confirm('Are you sure you want to delete the selected documents?')) {
+      try {
+        const deletePromises = Array.from(selectedDocuments).map(docId =>
+          deleteDoc(doc(db, 'documents', docId))
+        );
+        await Promise.all(deletePromises);
+        setDocuments(documents.filter(doc => !selectedDocuments.has(doc.id)));
+        setSelectedDocuments(new Set());
+      } catch (error) {
+        console.error('Error deleting documents:', error);
+      }
+    }
+  };
+
+  const handleSearchChange = useCallback(debounce((e: React.ChangeEvent<HTMLInputElement>) => {
+    setSearchTerm(e.target.value);
+  }, 300), []);
+
+  const filteredDocuments = documents.filter(doc => 
     doc.title.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  const handleContextMenu = (event: React.MouseEvent, docId: string) => {
-    event.preventDefault();
-    setContextMenu({ id: docId, top: event.clientY, left: event.clientX });
+  const handleCheckboxChange = (docId: string) => {
+    setSelectedDocuments((prev) => {
+      const updated = new Set(prev);
+      if (updated.has(docId)) {
+        updated.delete(docId);
+      } else {
+        updated.add(docId);
+      }
+      return updated;
+    });
   };
 
-  const closeContextMenu = () => {
-    setContextMenu(null);
+  const formatDate = (date: Date) => {
+    return date.toLocaleDateString('en-US', {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    });
   };
 
-  const handleDelete = async (docId: string) => {
-    try {
-      const { error } = await supabase
-        .from('documents')
-        .delete()
-        .eq('id', docId);
-      if (error) throw error;
-      setDocuments(documents.filter(doc => doc.id !== docId));
-      closeContextMenu();
-    } catch (error) {
-      console.error('Error deleting document:', error);
-    }
-  };
-
-  const handleRename = async (docId: string, newTitle: string) => {
-    try {
-      const { error } = await supabase
-        .from('documents')
-        .update({ title: newTitle })
-        .eq('id', docId);
-      if (error) throw error;
-      setDocuments(documents.map(doc => (doc.id === docId ? { ...doc, title: newTitle } : doc)));
-      closeContextMenu();
-    } catch (error) {
-      console.error('Error renaming document:', error);
-    }
-  };
-
-  return (
-    <div>
-      <div className="sm:flex sm:items-center sm:justify-between">
+ return (
+    <div className="p-2 min-h-screen bg-background text-foreground">
+      <div className="flex justify-between items-center mb-6">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Documents</h1>
-          <p className="mt-2 text-sm text-gray-600">A collection of all your documents.</p>
+          <h1 className="text-2xl font-bold">Documents</h1>
+          <p className="text-sm text-muted-foreground">Create and manage your documents</p>
         </div>
-        <div className="mt-4 sm:mt-0">
-          <Link href="/dashboard/chat" className="inline-flex items-center rounded-md bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-600">
-            New Document
-          </Link>
-        </div>
-      </div>
-      <div className="mt-6 flex justify-between items-center">
-        <input
-          type="text"
-          placeholder="Search"
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-          className="p-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-indigo-600"
-        />
-        <div className="flex items-center space-x-2">
-          <button className="p-2 text-gray-500 hover:text-gray-700">
-            <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
-              <path d="M4 6h12M4 10h12m-7 4h7"></path>
-            </svg>
-          </button>
-          <button className="p-2 text-gray-500 hover:text-gray-700">
-            <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
-              <path d="M4 4h4v4H4V4zM4 12h4v4H4v-4zM12 4h4v4h-4V4zM12 12h4v4h-4v-4z"></path>
-            </svg>
-          </button>
-          <select
-            className="p-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-indigo-600"
-            value={sortOption}
-            onChange={(e) => {
-              setSortOption(e.target.value);
-            }}
+        <div className="flex gap-2">
+          <input
+            type="text"
+            placeholder="Search documents..."
+            className="p-2 border border-input rounded"
+            onChange={handleSearchChange}
+          />
+          <Link
+            href="/dashboard/documents/new"
+            className="px-4 py-2 border border-primary text-primary rounded-sm hover:bg-primary transition-colors"
           >
-            <option value="last_modified">Last modified</option>
-            <option value="alphabetical">Alphabetical</option>
-            <option value="recently_added">Recently added</option>
-          </select>
+            <DocumentIcon className="inline-block w-5 h-5 mr-2" />
+            Blank
+          </Link>
+          <button
+            onClick={handleDelete}
+            className="px-4 py-2 bg-primary text-primary-foreground rounded-sm hover:bg-primary-hover transition-colors"
+          >
+            <TrashIcon className="inline-block w-5 h-5 mr-2" />
+            Delete
+          </button>
         </div>
       </div>
       {isLoading ? (
-        <div className="mt-6 text-center">Loading documents...</div>
-      ) : (
-        <div className="mt-6 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-          {filteredDocuments.map((doc) => (
-            <div
-              key={doc.id}
-              className="bg-white shadow rounded-lg p-6 flex flex-col justify-between h-full transition-shadow hover:shadow-lg cursor-pointer"
-              onContextMenu={(e) => handleContextMenu(e, doc.id)}
-              onClick={() => window.location.href = `/dashboard/documents/edit/${doc.id}`}
-            >
-              <div className="flex justify-between items-center">
-                <div className="text-lg font-semibold text-gray-900">{doc.title}</div>
-                <button className="text-gray-500 hover:text-gray-700">
-                  <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
-                    <path d="M10 12a2 2 0 110-4 2 2 0 010 4zm0-6a2 2 0 110-4 2 2 0 010 4zm0 12a2 2 0 110-4 2 2 0 010 4z"></path>
-                  </svg>
-                </button>
-              </div>
-              <div className="text-sm text-gray-500 mt-4">
-                {new Date(doc.created_at).toLocaleString()}
-              </div>
-            </div>
-          ))}
+        <div className="flex justify-center items-center h-64">
+          <ClipLoader color="var(--ring)" size={50} />
         </div>
-      )}
-      {contextMenu && (
-        <div
-          className="fixed bg-white shadow rounded-lg p-2 flex flex-col space-y-2"
-          style={{ top: contextMenu.top, left: contextMenu.left }}
-          onClick={closeContextMenu}
-        >
-          <button
-            className="text-red-600 hover:text-red-800"
-            onClick={() => handleDelete(contextMenu.id)}
-          >
-            Delete
-          </button>
-          <button
-            className="text-blue-600 hover:text-blue-800"
-            onClick={() => {
-              const newTitle = prompt('Enter new title:', documents.find(doc => doc.id === contextMenu.id)?.title);
-              if (newTitle) {
-                handleRename(contextMenu.id, newTitle);
-              }
-            }}
-          >
-            Rename
-          </button>
+      ) : (
+        <div className="overflow-x-auto">
+          <table className="min-w-full divide-y divide-border">
+            <thead className="bg-card">
+              <tr>
+                <th className="px-6 py-3 text-left text-xs font-medium text-card-foreground uppercase tracking-wider">
+                  <input
+                    type="checkbox"
+                    onChange={(e) => {
+                      const isChecked = e.target.checked;
+                      if (isChecked) {
+                        const allDocIds = documents.map(doc => doc.id);
+                        setSelectedDocuments(new Set(allDocIds));
+                      } else {
+                        setSelectedDocuments(new Set());
+                      }
+                    }}
+                  />
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-card-foreground uppercase tracking-wider">
+                  Title
+                </th>
+                <th className="px-6 py-3 text-right text-xs font-medium text-card-foreground uppercase tracking-wider">
+                  Last Updated
+                </th>
+              </tr>
+            </thead>
+            <tbody className="bg-popover divide-y divide-border">
+              {filteredDocuments.map((doc) => (
+                <tr key={doc.id} onClick={() => router.push(`/dashboard/documents/${doc.id}`)} className="cursor-pointer">
+                  <td className="px-6 py-4" onClick={(e) => e.stopPropagation()}>
+                    <input
+                      type="checkbox"
+                      checked={selectedDocuments.has(doc.id)}
+                      onChange={(e) => {
+                        e.stopPropagation();
+                        handleCheckboxChange(doc.id);
+                      }}
+                    />
+                  </td>
+                  <td className="px-6 py-4">
+                    <div className="text-primary-foreground flex items-center">
+                      <div className="flex items-center justify-center w-6 h-6 bg-blue-100 text-blue-500 rounded-full mr-2">
+                        <DocumentIcon className="h-4 w-4" />
+                      </div>
+                      <div className="text-sm font-medium text-foreground">{doc.title}</div>
+                    </div>
+                  </td>
+                  <td className="px-6 py-4 text-right">
+                    <div className="text-sm text-muted-foreground">{formatDate(doc.updatedAt)}</div>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
         </div>
       )}
     </div>
   );
-}
+};
+
+export default DocumentsPage;

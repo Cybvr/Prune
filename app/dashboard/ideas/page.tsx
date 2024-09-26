@@ -1,19 +1,18 @@
+// @app/dashboard/ideas/page.tsx
+
 'use client';
 import React, { useState, useEffect } from 'react';
-import { createClient } from '@supabase/supabase-js';
 import { Dialog, Transition } from '@headlessui/react';
 import { Fragment } from 'react';
-
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
-const supabase = createClient(supabaseUrl, supabaseKey);
+import { collection, query, where, orderBy, getDocs, addDoc, updateDoc, deleteDoc, doc } from 'firebase/firestore';
+import { getAuth, onAuthStateChanged } from 'firebase/auth';
+import { db } from '@/firebase/firebaseConfig';
 
 type Idea = {
-  id: number;
-  user_id: string;
-  name: string;
+  id: string;
+  title: string;
   content: string;
-  tags: string;
+  categories: string[];
   created_at: string;
   updated_at: string;
 };
@@ -22,25 +21,38 @@ export default function IdeasPage() {
   const [ideas, setIdeas] = useState<Idea[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isOpen, setIsOpen] = useState(false);
-  const [newIdea, setNewIdea] = useState({ name: '', content: '', tags: '' });
+  const [newIdea, setNewIdea] = useState({ title: '', content: '', categories: '' });
+  const [userId, setUserId] = useState<string | null>(null);
 
   useEffect(() => {
-    fetchIdeas();
+    const auth = getAuth();
+    const unsubscribe = onAuthStateChanged(auth, (user) => {
+      if (user) {
+        setUserId(user.uid);
+        fetchIdeas(user.uid);
+      } else {
+        console.error('User not authenticated');
+        setIsLoading(false);
+      }
+    });
+
+    return () => unsubscribe();
   }, []);
 
-  const fetchIdeas = async () => {
+  const fetchIdeas = async (uid: string) => {
     try {
       setIsLoading(true);
-      const { data: { user } } = await supabase.auth.getUser();
-      if (user) {
-        const { data, error } = await supabase
-          .from('ideas')
-          .select('*')
-          .eq('user_id', user.id)
-          .order('created_at', { ascending: false });
-        if (error) throw error;
-        setIdeas(data || []);
-      }
+      const q = query(
+        collection(db, 'ideas'),
+        where('userId', '==', uid),
+        orderBy('created_at', 'desc')
+      );
+      const querySnapshot = await getDocs(q);
+      const fetchedIdeas = querySnapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data()
+      } as Idea));
+      setIdeas(fetchedIdeas);
     } catch (error) {
       console.error('Error fetching ideas:', error);
     } finally {
@@ -50,23 +62,26 @@ export default function IdeasPage() {
 
   const handleCreateIdea = async () => {
     try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (user) {
-        const { data, error } = await supabase
-          .from('ideas')
-          .insert([
-            {
-              user_id: user.id,
-              name: newIdea.name || 'Untitled',
-              content: newIdea.content,
-              tags: newIdea.tags,
-            }
-          ]);
-        if (error) throw error;
-        fetchIdeas(); // Refresh the ideas list
-        setIsOpen(false);
-        setNewIdea({ name: '', content: '', tags: '' });
-      }
+      if (!userId) return;
+      const docRef = await addDoc(collection(db, 'ideas'), {
+        userId: userId,
+        title: newIdea.title || 'Untitled',
+        content: newIdea.content,
+        categories: newIdea.categories.split(',').map(cat => cat.trim()),
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      });
+      const newIdeaWithId = {
+        id: docRef.id,
+        title: newIdea.title || 'Untitled',
+        content: newIdea.content,
+        categories: newIdea.categories.split(',').map(cat => cat.trim()),
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      };
+      setIdeas([newIdeaWithId, ...ideas]);
+      setIsOpen(false);
+      setNewIdea({ title: '', content: '', categories: '' });
     } catch (error) {
       console.error('Error creating idea:', error);
     }
@@ -105,13 +120,13 @@ export default function IdeasPage() {
           {ideas.map((idea) => (
             <div key={idea.id} className="bg-white shadow rounded-lg p-6 flex flex-col justify-between h-64 transition-shadow hover:shadow-lg">
               <div>
-                <div className="text-lg font-medium text-gray-900">{idea.name}</div>
+                <div className="text-lg font-medium text-gray-900">{idea.title}</div>
                 <div className="text-sm text-gray-600 mt-3">{idea.content}</div>
               </div>
               <div className="mt-4 flex flex-wrap gap-2">
-                {idea.tags.split(',').map((tag, index) => (
+                {idea.categories.map((category, index) => (
                   <span key={index} className="text-xs font-medium px-2.5 py-0.5 rounded" style={{ backgroundColor: getTagColor(index), color: getTagTextColor(index) }}>
-                    {tag.trim()}
+                    {category}
                   </span>
                 ))}
               </div>
@@ -121,10 +136,7 @@ export default function IdeasPage() {
       )}
 
       <Transition appear show={isOpen} as={Fragment}>
-        <Dialog as="div" className="relative z-10" onClose={() => {
-          handleCreateIdea();
-          setIsOpen(false);
-        }}>
+        <Dialog as="div" className="relative z-10" onClose={() => setIsOpen(false)}>
           <Transition.Child
             as={Fragment}
             enter="ease-out duration-300"
@@ -160,8 +172,8 @@ export default function IdeasPage() {
                       type="text"
                       placeholder="Title"
                       className="w-full p-2 mb-4 border rounded"
-                      value={newIdea.name}
-                      onChange={(e) => setNewIdea({ ...newIdea, name: e.target.value })}
+                      value={newIdea.title}
+                      onChange={(e) => setNewIdea({ ...newIdea, title: e.target.value })}
                     />
                     <textarea
                       placeholder="Content"
@@ -171,11 +183,20 @@ export default function IdeasPage() {
                     />
                     <input
                       type="text"
-                      placeholder="Tags (comma separated)"
-                      className="w-full p-2 border rounded"
-                      value={newIdea.tags}
-                      onChange={(e) => setNewIdea({ ...newIdea, tags: e.target.value })}
+                      placeholder="Categories (comma separated)"
+                      className="w-full p-2 mb-4 border rounded"
+                      value={newIdea.categories}
+                      onChange={(e) => setNewIdea({ ...newIdea, categories: e.target.value })}
                     />
+                    <div className="mt-4 flex justify-end">
+                      <button
+                        type="button"
+                        className="inline-flex justify-center rounded-md border border-transparent bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2"
+                        onClick={handleCreateIdea}
+                      >
+                        Save Idea
+                      </button>
+                    </div>
                   </div>
                 </Dialog.Panel>
               </Transition.Child>

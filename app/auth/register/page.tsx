@@ -5,7 +5,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { createUserWithEmailAndPassword, signInWithPopup, GoogleAuthProvider } from 'firebase/auth';
-import { auth } from '../../firebase/firebaseConfig';
+import { auth } from '@/firebase/firebaseConfig';
 
 export default function Register() {
   const [email, setEmail] = useState('');
