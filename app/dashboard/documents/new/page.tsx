@@ -9,6 +9,12 @@ import Editor from '@/app/dashboard/components/Editor';
 import AIAssistant from '@/app/dashboard/components/AIAssistant';
 import { ArrowLeftIcon } from '@heroicons/react/24/outline';
 import debounce from 'lodash/debounce';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import DocumentOptions from '@/app/dashboard/components/DocumentOptions';
+
+const statuses = ["Backlog", "Planned", "In Progress", "Completed", "Canceled"];
+const priorities = ["No Priority", "Low", "Medium", "High", "Urgent"];
 
 export default function NewDocumentPage() {
   const [title, setTitle] = useState('');
@@ -16,6 +22,11 @@ export default function NewDocumentPage() {
   const [userId, setUserId] = useState<string | null>(null);
   const [documentId, setDocumentId] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState(false);
+  const [selectedStatus, setSelectedStatus] = useState<string | null>(statuses[0]);
+  const [selectedPriority, setSelectedPriority] = useState<string | null>(priorities[0]);
+  const [startDate, setStartDate] = useState<Date | null>(null);
+  const [endDate, setEndDate] = useState<Date | null>(null);
+  const [favorite, setFavorite] = useState<boolean>(false);
   const router = useRouter();
   const auth = getAuth();
 
@@ -45,6 +56,11 @@ export default function NewDocumentPage() {
           title,
           content,
           updatedAt: new Date().toISOString(),
+          status: selectedStatus,
+          priority: selectedPriority,
+          startDate: startDate ? startDate.toISOString() : null,
+          endDate: endDate ? endDate.toISOString() : null,
+          favorite,
         });
       } else {
         // Create new document
@@ -54,6 +70,11 @@ export default function NewDocumentPage() {
           userId,
           createdAt: new Date().toISOString(),
           updatedAt: new Date().toISOString(),
+          status: selectedStatus,
+          priority: selectedPriority,
+          startDate: startDate ? startDate.toISOString() : null,
+          endDate: endDate ? endDate.toISOString() : null,
+          favorite
         });
         setDocumentId(docRef.id);
       }
@@ -63,16 +84,7 @@ export default function NewDocumentPage() {
     } finally {
       setIsSaving(false);
     }
-  }, [userId, documentId, title, content]);
-
-  // Debounce the save function to avoid too frequent updates
-  const debouncedSave = useCallback(debounce(saveDocument, 1000), [saveDocument]);
-
-  useEffect(() => {
-    if (title || content) {
-      debouncedSave();
-    }
-  }, [title, content, debouncedSave]);
+  }, [userId, documentId, title, content, selectedStatus, selectedPriority, startDate, endDate, favorite]);
 
   const handleTitleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setTitle(e.target.value);
@@ -85,8 +97,8 @@ export default function NewDocumentPage() {
   return (
     <div className="flex flex-col h-screen">
       <div className="flex items-center p-4 border-b">
-        <button 
-          onClick={() => router.back()} 
+        <button
+          onClick={() => router.back()}
           className="mr-4 text-gray-600 hover:text-gray-900"
         >
           <ArrowLeftIcon className="h-6 w-6" />
@@ -102,11 +114,33 @@ export default function NewDocumentPage() {
           {isSaving ? 'Saving...' : 'All changes saved'}
         </span>
       </div>
+
       <div className="flex flex-1 overflow-hidden">
         <div className="flex-grow overflow-auto">
           <Editor content={content} setContent={handleContentChange} />
         </div>
         <div className="w-1/4 border-l overflow-auto">
+          <div className="p-4">
+            <DocumentOptions
+              selectedStatus={selectedStatus}
+              setSelectedStatus={setSelectedStatus}
+              selectedPriority={selectedPriority}
+              setSelectedPriority={setSelectedPriority}
+              startDate={startDate}
+              setStartDate={setStartDate}
+              endDate={endDate}
+              setEndDate={setEndDate}
+              favorite={favorite}
+              setFavorite={setFavorite}
+            />
+            <Button
+              onClick={saveDocument}
+              className="w-full text-sm bg-primary text-primary-foreground hover:bg-primary/90 mt-4"
+            >
+              Save
+            </Button>
+          </div>
+
           <AIAssistant content={content} />
         </div>
       </div>

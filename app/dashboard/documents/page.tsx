@@ -9,8 +9,8 @@ import { ClipLoader } from 'react-spinners';
 import { DocumentIcon, TrashIcon, PlusIcon, XCircleIcon, MagnifyingGlassIcon } from '@heroicons/react/24/outline';
 import debounce from 'lodash/debounce';
 import Link from 'next/link';
-import { AlertDialog, AlertDialogTrigger, AlertDialogContent, AlertDialogHeader, AlertDialogFooter, AlertDialogTitle, AlertDialogDescription, AlertDialogAction, AlertDialogCancel } from '@/components/ui/alert-dialog';
-import { ToastProvider, ToastViewport, Toast, ToastTitle, ToastClose } from '@/components/ui/toast';
+import { Toaster, toast } from 'sonner'; // Using sonner for toasts
+import { Button } from '@/components/ui/button';
 
 type Document = {
   id: string;
@@ -23,8 +23,7 @@ export default function DocumentsPage() {
   const [documents, setDocuments] = useState<Document[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState<string>('');
-  const [showToast, setShowToast] = useState({ show: false, message: '', variant: 'default' });
-  const [documentToDelete, setDocumentToDelete] = useState<string | null>(null);
+  const [selectedDocuments, setSelectedDocuments] = useState<string[]>([]);
   const router = useRouter();
 
   useEffect(() => {
@@ -49,7 +48,7 @@ export default function DocumentsPage() {
         where('userId', '==', uid)
       );
       const querySnapshot = await getDocs(q);
-      const docs = querySnapshot.docs.map(doc => ({
+      const docs = querySnapshot.docs.map((doc) => ({
         id: doc.id,
         title: doc.data().title,
         createdAt: new Date(doc.data().createdAt),
@@ -58,31 +57,53 @@ export default function DocumentsPage() {
       setDocuments(docs);
     } catch (error) {
       console.error('Error fetching documents:', error);
-      setShowToast({ show: true, message: 'Error fetching documents.', variant: 'destructive' });
+      toast.error('Error fetching documents.');
     } finally {
       setIsLoading(false);
     }
   };
 
   const handleDelete = async () => {
-    if (!documentToDelete) return;
     try {
-      await deleteDoc(doc(db, 'documents', documentToDelete));
-      setDocuments(documents.filter(doc => doc.id !== documentToDelete));
-      setShowToast({ show: true, message: 'Document deleted successfully!', variant: 'default' });
+      const deletePromises = selectedDocuments.map((id) => deleteDoc(doc(db, 'documents', id)));
+      await Promise.all(deletePromises);
+      setDocuments(documents.filter((doc) => !selectedDocuments.includes(doc.id)));
+      setSelectedDocuments([]);
+      toast.success(`${selectedDocuments.length} documents deleted successfully!`);
     } catch (error) {
       console.error('Error deleting document:', error);
-      setShowToast({ show: true, message: 'Error deleting document.', variant: 'destructive' });
-    } finally {
-      setDocumentToDelete(null);
+      toast.error('Error deleting document.');
     }
   };
 
-  const handleSearchChange = useCallback(debounce((value: string) => {
-    setSearchTerm(value);
-  }, 300), []);
+  const toggleSelectDocument = (id: string) => {
+    const newSelectedDocuments = selectedDocuments.includes(id)
+      ? selectedDocuments.filter((docId) => docId !== id)
+      : [...selectedDocuments, id];
 
-  const filteredDocuments = documents.filter(doc => 
+    setSelectedDocuments(newSelectedDocuments);
+
+    if (newSelectedDocuments.length > 0) {
+      toast(`${newSelectedDocuments.length} document(s) selected`, {
+        description: 'Click the delete button to remove selected documents',
+        action: {
+          label: 'Delete',
+          onClick: handleDelete,
+        },
+      });
+    } else {
+      toast.dismiss();
+    }
+  };
+
+  const handleSearchChange = useCallback(
+    debounce((value: string) => {
+      setSearchTerm(value);
+    }, 300),
+    []
+  );
+
+  const filteredDocuments = documents.filter((doc) =>
     doc.title.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
@@ -92,36 +113,13 @@ export default function DocumentsPage() {
       month: 'short',
       day: 'numeric',
       hour: '2-digit',
-      minute: '2-digit'
+      minute: '2-digit',
     });
   };
 
   return (
     <div className="p-4 min-h-screen bg-background text-foreground">
-      <ToastProvider>
-        <ToastViewport />
-        {showToast.show && (
-          <Toast variant={showToast.variant as 'default' | 'destructive'}>
-            <ToastTitle>{showToast.message}</ToastTitle>
-            <ToastClose />
-          </Toast>
-        )}
-      </ToastProvider>
-
-      <AlertDialog open={!!documentToDelete} onOpenChange={() => setDocumentToDelete(null)}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Confirm Deletion</AlertDialogTitle>
-            <AlertDialogDescription>
-              Are you sure you want to delete this document? This action cannot be undone.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={handleDelete}>Delete</AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+      <Toaster />
 
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
         <div>
@@ -173,6 +171,15 @@ export default function DocumentsPage() {
             <thead className="bg-card">
               <tr>
                 <th className="px-6 py-3 text-left text-xs font-medium text-card-foreground uppercase tracking-wider">
+                  <input
+                    type="checkbox"
+                    checked={selectedDocuments.length === filteredDocuments.length}
+                    onChange={(e) =>
+                      setSelectedDocuments(e.target.checked ? filteredDocuments.map((doc) => doc.id) : [])
+                    }
+                  />
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-card-foreground uppercase tracking-wider">
                   Title
                 </th>
                 <th className="px-6 py-3 text-right text-xs font-medium text-card-foreground uppercase tracking-wider">
@@ -187,6 +194,13 @@ export default function DocumentsPage() {
               {filteredDocuments.map((doc) => (
                 <tr key={doc.id} className="hover:bg-muted/50 transition-colors">
                   <td className="px-6 py-4">
+                    <input
+                      type="checkbox"
+                      checked={selectedDocuments.includes(doc.id)}
+                      onChange={() => toggleSelectDocument(doc.id)}
+                    />
+                  </td>
+                  <td className="px-6 py-4">
                     <div className="flex items-center">
                       <DocumentIcon className="h-5 w-5 text-primary mr-2" />
                       <Link href={`/dashboard/documents/${doc.id}`} className="text-sm font-medium text-foreground">
@@ -199,7 +213,7 @@ export default function DocumentsPage() {
                   </td>
                   <td className="px-6 py-4 text-right">
                     <button
-                      onClick={() => setDocumentToDelete(doc.id)}
+                      onClick={() => toggleSelectDocument(doc.id)}
                       className="text-sm text-destructive hover:underline"
                     >
                       Delete
