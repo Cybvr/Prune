@@ -28,7 +28,7 @@ import ProfileDropdown from '@/app/dashboard/components/ProfileDropdown';
 const menuItems = [
   { name: 'Home', href: '/dashboard', icon: HomeIcon },
   { name: 'Documents', href: '/dashboard/documents', icon: DocumentIcon },
-  { name: 'Kanban', href: '/dashboard/kanban', icon: FolderIcon },
+  { name: 'Board', href: '/dashboard/board', icon: FolderIcon },
   { name: 'Coach', href: '/dashboard/coach', icon: UserGroupIcon },
   { name: 'Templates', href: '/dashboard/templates', icon: DocumentDuplicateIcon },
 ];

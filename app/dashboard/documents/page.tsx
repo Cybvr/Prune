@@ -1,14 +1,16 @@
 'use client';
 
 import React, { useState, useEffect, useCallback } from 'react';
-import { useRouter } from 'next/router'; // Import useRouter
+import { useRouter } from 'next/navigation';
 import { collection, query, where, getDocs, deleteDoc, doc } from 'firebase/firestore';
 import { getAuth, onAuthStateChanged } from 'firebase/auth';
 import { db } from '@/firebase/firebaseConfig';
 import { ClipLoader } from 'react-spinners';
-import { DocumentIcon, TrashIcon } from '@heroicons/react/24/outline';
+import { DocumentIcon, TrashIcon, PlusIcon, XCircleIcon, MagnifyingGlassIcon } from '@heroicons/react/24/outline';
 import debounce from 'lodash/debounce';
 import Link from 'next/link';
+import { AlertDialog, AlertDialogTrigger, AlertDialogContent, AlertDialogHeader, AlertDialogFooter, AlertDialogTitle, AlertDialogDescription, AlertDialogAction, AlertDialogCancel } from '@/components/ui/alert-dialog';
+import { ToastProvider, ToastViewport, Toast, ToastTitle, ToastClose } from '@/components/ui/toast';
 
 type Document = {
   id: string;
@@ -17,19 +19,18 @@ type Document = {
   updatedAt: Date;
 };
 
-const DocumentsPage: React.FC = () => {
+export default function DocumentsPage() {
   const [documents, setDocuments] = useState<Document[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [userId, setUserId] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState<string>('');
-  const [selectedDocuments, setSelectedDocuments] = useState<Set<string>>(new Set());
+  const [showToast, setShowToast] = useState({ show: false, message: '', variant: 'default' });
+  const [documentToDelete, setDocumentToDelete] = useState<string | null>(null);
   const router = useRouter();
 
   useEffect(() => {
     const auth = getAuth();
     const unsubscribe = onAuthStateChanged(auth, (user) => {
       if (user) {
-        setUserId(user.uid);
         fetchDocuments(user.uid);
       } else {
         setIsLoading(false);
@@ -48,57 +49,42 @@ const DocumentsPage: React.FC = () => {
         where('userId', '==', uid)
       );
       const querySnapshot = await getDocs(q);
-      const docs = querySnapshot.docs.map(doc => {
-        const data = doc.data();
-        return {
-          id: doc.id,
-          title: data.title,
-          createdAt: new Date(data.createdAt),
-          updatedAt: new Date(data.updatedAt),
-        } as Document;
-      });
+      const docs = querySnapshot.docs.map(doc => ({
+        id: doc.id,
+        title: doc.data().title,
+        createdAt: new Date(doc.data().createdAt),
+        updatedAt: new Date(doc.data().updatedAt),
+      }));
       setDocuments(docs);
     } catch (error) {
       console.error('Error fetching documents:', error);
+      setShowToast({ show: true, message: 'Error fetching documents.', variant: 'destructive' });
     } finally {
       setIsLoading(false);
     }
   };
 
   const handleDelete = async () => {
-    if (window.confirm('Are you sure you want to delete the selected documents?')) {
-      try {
-        const deletePromises = Array.from(selectedDocuments).map(docId =>
-          deleteDoc(doc(db, 'documents', docId))
-        );
-        await Promise.all(deletePromises);
-        setDocuments(documents.filter(doc => !selectedDocuments.has(doc.id)));
-        setSelectedDocuments(new Set());
-      } catch (error) {
-        console.error('Error deleting documents:', error);
-      }
+    if (!documentToDelete) return;
+    try {
+      await deleteDoc(doc(db, 'documents', documentToDelete));
+      setDocuments(documents.filter(doc => doc.id !== documentToDelete));
+      setShowToast({ show: true, message: 'Document deleted successfully!', variant: 'default' });
+    } catch (error) {
+      console.error('Error deleting document:', error);
+      setShowToast({ show: true, message: 'Error deleting document.', variant: 'destructive' });
+    } finally {
+      setDocumentToDelete(null);
     }
   };
 
-  const handleSearchChange = useCallback(debounce((e: React.ChangeEvent<HTMLInputElement>) => {
-    setSearchTerm(e.target.value);
+  const handleSearchChange = useCallback(debounce((value: string) => {
+    setSearchTerm(value);
   }, 300), []);
 
   const filteredDocuments = documents.filter(doc => 
     doc.title.toLowerCase().includes(searchTerm.toLowerCase())
   );
-
-  const handleCheckboxChange = (docId: string) => {
-    setSelectedDocuments((prev) => {
-      const updated = new Set(prev);
-      if (updated.has(docId)) {
-        updated.delete(docId);
-      } else {
-        updated.add(docId);
-      }
-      return updated;
-    });
-  };
 
   const formatDate = (date: Date) => {
     return date.toLocaleDateString('en-US', {
@@ -110,39 +96,76 @@ const DocumentsPage: React.FC = () => {
     });
   };
 
- return (
-    <div className="p-2 min-h-screen bg-background text-foreground">
-      <div className="flex justify-between items-center mb-6">
+  return (
+    <div className="p-4 min-h-screen bg-background text-foreground">
+      <ToastProvider>
+        <ToastViewport />
+        {showToast.show && (
+          <Toast variant={showToast.variant as 'default' | 'destructive'}>
+            <ToastTitle>{showToast.message}</ToastTitle>
+            <ToastClose />
+          </Toast>
+        )}
+      </ToastProvider>
+
+      <AlertDialog open={!!documentToDelete} onOpenChange={() => setDocumentToDelete(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Confirm Deletion</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to delete this document? This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={handleDelete}>Delete</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
         <div>
           <h1 className="text-2xl font-bold">Documents</h1>
-          <p className="text-sm text-muted-foreground">Create and manage your documents</p>
+          <p className="text-sm text-muted-foreground">Manage your documents</p>
         </div>
-        <div className="flex gap-2">
-          <input
-            type="text"
-            placeholder="Search documents..."
-            className="p-2 border border-input rounded"
-            onChange={handleSearchChange}
-          />
+        <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
+          <div className="relative w-full sm:w-64">
+            <input
+              type="text"
+              placeholder="Search documents..."
+              className="w-full pl-10 pr-4 py-2 border border-input rounded"
+              onChange={(e) => handleSearchChange(e.target.value)}
+              value={searchTerm}
+            />
+            <MagnifyingGlassIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-muted-foreground" />
+            {searchTerm && (
+              <button
+                onClick={() => {
+                  setSearchTerm('');
+                  handleSearchChange('');
+                }}
+                className="absolute right-2 top-1/2 transform -translate-y-1/2"
+              >
+                <XCircleIcon className="h-5 w-5 text-muted-foreground" />
+              </button>
+            )}
+          </div>
           <Link
             href="/dashboard/documents/new"
-            className="px-4 py-2 border border-primary text-primary rounded-sm hover:bg-primary transition-colors"
+            className="px-4 py-2 bg-primary text-primary-foreground rounded-sm hover:bg-primary/90 transition-colors flex items-center justify-center"
           >
-            <DocumentIcon className="inline-block w-5 h-5 mr-2" />
-            Blank
+            <PlusIcon className="inline-block w-5 h-5 mr-2" />
+            New Document
           </Link>
-          <button
-            onClick={handleDelete}
-            className="px-4 py-2 bg-primary text-primary-foreground rounded-sm hover:bg-primary-hover transition-colors"
-          >
-            <TrashIcon className="inline-block w-5 h-5 mr-2" />
-            Delete
-          </button>
         </div>
       </div>
       {isLoading ? (
         <div className="flex justify-center items-center h-64">
           <ClipLoader color="var(--ring)" size={50} />
+        </div>
+      ) : filteredDocuments.length === 0 ? (
+        <div className="text-center text-muted-foreground mt-8">
+          No documents found. Create a new one to get started!
         </div>
       ) : (
         <div className="overflow-x-auto">
@@ -150,50 +173,37 @@ const DocumentsPage: React.FC = () => {
             <thead className="bg-card">
               <tr>
                 <th className="px-6 py-3 text-left text-xs font-medium text-card-foreground uppercase tracking-wider">
-                  <input
-                    type="checkbox"
-                    onChange={(e) => {
-                      const isChecked = e.target.checked;
-                      if (isChecked) {
-                        const allDocIds = documents.map(doc => doc.id);
-                        setSelectedDocuments(new Set(allDocIds));
-                      } else {
-                        setSelectedDocuments(new Set());
-                      }
-                    }}
-                  />
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-card-foreground uppercase tracking-wider">
                   Title
                 </th>
                 <th className="px-6 py-3 text-right text-xs font-medium text-card-foreground uppercase tracking-wider">
                   Last Updated
                 </th>
+                <th className="px-6 py-3 text-right text-xs font-medium text-card-foreground uppercase tracking-wider">
+                  Actions
+                </th>
               </tr>
             </thead>
             <tbody className="bg-popover divide-y divide-border">
               {filteredDocuments.map((doc) => (
-                <tr key={doc.id} onClick={() => router.push(`/dashboard/documents/${doc.id}`)} className="cursor-pointer">
-                  <td className="px-6 py-4" onClick={(e) => e.stopPropagation()}>
-                    <input
-                      type="checkbox"
-                      checked={selectedDocuments.has(doc.id)}
-                      onChange={(e) => {
-                        e.stopPropagation();
-                        handleCheckboxChange(doc.id);
-                      }}
-                    />
-                  </td>
+                <tr key={doc.id} className="hover:bg-muted/50 transition-colors">
                   <td className="px-6 py-4">
-                    <div className="text-primary-foreground flex items-center">
-                      <div className="flex items-center justify-center w-6 h-6 bg-blue-100 text-blue-500 rounded-full mr-2">
-                        <DocumentIcon className="h-4 w-4" />
-                      </div>
-                      <div className="text-sm font-medium text-foreground">{doc.title}</div>
+                    <div className="flex items-center">
+                      <DocumentIcon className="h-5 w-5 text-primary mr-2" />
+                      <Link href={`/dashboard/documents/${doc.id}`} className="text-sm font-medium text-foreground">
+                        {doc.title}
+                      </Link>
                     </div>
                   </td>
                   <td className="px-6 py-4 text-right">
-                    <div className="text-sm text-muted-foreground">{formatDate(doc.updatedAt)}</div>
+                    <span className="text-sm text-muted-foreground">{formatDate(doc.updatedAt)}</span>
+                  </td>
+                  <td className="px-6 py-4 text-right">
+                    <button
+                      onClick={() => setDocumentToDelete(doc.id)}
+                      className="text-sm text-destructive hover:underline"
+                    >
+                      Delete
+                    </button>
                   </td>
                 </tr>
               ))}
@@ -203,6 +213,4 @@ const DocumentsPage: React.FC = () => {
       )}
     </div>
   );
-};
-
-export default DocumentsPage;
+}
