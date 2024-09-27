@@ -7,10 +7,21 @@ import { db } from '@/firebase/firebaseConfig';
 import { ClipLoader } from 'react-spinners';
 import { DocumentIcon, TrashIcon } from '@heroicons/react/24/outline';
 import Link from 'next/link';
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Separator } from "@/components/ui/separator";
+import { Bar, BarChart, XAxis, YAxis, Tooltip } from "recharts";
 
 type Document = {
   id: string;
   title: string;
+  status: string;
+  priority: string;
   createdAt: Date;
   updatedAt: Date;
 };
@@ -20,12 +31,18 @@ const DashboardPage: React.FC = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [userId, setUserId] = useState<string | null>(null);
 
+  const statuses = ["Backlog", "Planned", "In Progress", "Completed", "Canceled"];
+  const priorities = ["No Priority", "Low", "Medium", "High", "Urgent"];
+
   useEffect(() => {
     const auth = getAuth();
     const unsubscribe = onAuthStateChanged(auth, (user) => {
       if (user) {
         setUserId(user.uid);
-        fetchDocuments(user.uid);
+        fetchDocuments(user.uid).catch(error => {
+          console.error('Error fetching documents:', error);
+          setIsLoading(false);
+        });
       } else {
         setIsLoading(false);
       }
@@ -35,8 +52,8 @@ const DashboardPage: React.FC = () => {
   }, []);
 
   const fetchDocuments = async (uid: string) => {
+    setIsLoading(true);
     try {
-      setIsLoading(true);
       const q = query(
         collection(db, 'documents'),
         where('userId', '==', uid)
@@ -47,6 +64,8 @@ const DashboardPage: React.FC = () => {
         return {
           id: doc.id,
           title: data.title,
+          status: data.status,
+          priority: data.priority,
           createdAt: new Date(data.createdAt),
           updatedAt: new Date(data.updatedAt),
         } as Document;
@@ -69,59 +88,120 @@ const DashboardPage: React.FC = () => {
     });
   };
 
-  return (
-    <div className="p-2 min-h-screen bg-background text-foreground">
-      <h1 className="text-2xl font-bold text-foreground">Hi, Welcome back</h1>
-      <p className="text-sm text-muted-foreground mb-6">Here's a summary of your recent documents.</p>
+  const getStatusCounts = () => {
+    return statuses.map(status => ({
+      name: status,
+      count: documents.filter(doc => doc.status === status).length,
+    }));
+  };
 
-      {isLoading ? (
-        <div className="flex justify-center items-center h-64">
-          <ClipLoader color="#4F46E5" size={50} />
-        </div>
-      ) : (
-        <div className="overflow-x-auto">
-          <table className="min-w-full divide-y divide-border">
-            <thead className="bg-card">
-              <tr>
-                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-card-foreground uppercase tracking-wider">
-                  Title
-                </th>
-                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-card-foreground uppercase tracking-wider">
-                  Last Updated
-                </th>
-                <th scope="col" className="px-6 py-3 text-right text-xs font-medium text-card-foreground uppercase tracking-wider">
-                  Actions
-                </th>
-              </tr>
-            </thead>
-            <tbody className="bg-popover divide-y divide-border">
-              {documents.map((doc) => (
-                <tr key={doc.id}>
-                  <td className="px-6 py-4">
-                    <Link
-                      href={`/dashboard/documents/${doc.id}`}
-                      className="text-primary-foreground hover:text-primary-hover flex items-center"
-                    >
-                      <div className="flex items-center justify-center w-6 h-6 bg-blue-100 text-blue-500 rounded-full mr-2">
-                        <DocumentIcon className="h-4 w-4" />
-                      </div>
-                      <div className="text-sm font-medium text-foreground">{doc.title}</div>
-                    </Link>
-                  </td>
-                  <td className="px-6 py-4">
-                    <div className="text-sm text-muted-foreground">{formatDate(doc.updatedAt)}</div>
-                  </td>
-                  <td className="px-6 py-4 text-right text-sm font-medium">
-                    <button className="text-destructive-foreground hover:text-destructive">
-                      <TrashIcon className="h-5 w-5 inline" />
-                    </button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      )}
+  const getPriorityCounts = () => {
+    return priorities.map(priority => ({
+      name: priority,
+      count: documents.filter(doc => doc.priority === priority).length,
+    }));
+  };
+
+  const statusCounts = getStatusCounts();
+  const priorityCounts = getPriorityCounts();
+
+  return (
+    <div className="p-6 min-h-screen bg-background text-foreground">
+      <h1 className="text-3xl font-bold text-foreground mb-2">Hi, Welcome back</h1>
+      <p className="text-sm text-muted-foreground mb-8">Here's a summary of your recent documents.</p>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8">
+        <Card>
+          <CardHeader>
+            <CardTitle>Status</CardTitle>
+            <CardDescription>Status of Your Documents</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="h-[200px]">
+              <BarChart width={300} height={200} data={statusCounts}>
+                <XAxis dataKey="name" />
+                <YAxis />
+                <Tooltip />
+                <Bar dataKey="count" fill="hsl(var(--primary))" />
+              </BarChart>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>Priority</CardTitle>
+            <CardDescription>Priority of Your Documents</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="h-[200px]">
+              <BarChart width={300} height={200} data={priorityCounts}>
+                <XAxis dataKey="name" />
+                <YAxis />
+                <Tooltip />
+                <Bar dataKey="count" fill="hsl(var(--secondary))" />
+              </BarChart>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Recent Documents</CardTitle>
+          <CardDescription>Your most recently updated documents</CardDescription>
+        </CardHeader>
+        <CardContent>
+          {isLoading ? (
+            <div className="flex justify-center items-center h-64">
+              <ClipLoader color="hsl(var(--primary))" size={50} />
+            </div>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="w-full">
+                <thead>
+                  <tr className="border-b border-border">
+                    <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
+                      Title
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
+                      Last Updated
+                    </th>
+                    <th className="px-6 py-3 text-right text-xs font-medium text-muted-foreground uppercase tracking-wider">
+                      Actions
+                    </th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {documents.map((doc, index) => (
+                    <tr key={doc.id} className={index !== documents.length - 1 ? "border-b border-border" : ""}>
+                      <td className="px-6 py-4">
+                        <Link
+                          href={`/dashboard/documents/${doc.id}`}
+                          className="text-primary hover:text-primary-hover flex items-center"
+                        >
+                          <div className="flex items-center justify-center w-8 h-8 bg-primary/10 text-primary rounded-full mr-3">
+                            <DocumentIcon className="h-4 w-4" />
+                          </div>
+                          <span className="text-sm font-medium">{doc.title}</span>
+                        </Link>
+                      </td>
+                      <td className="px-6 py-4">
+                        <span className="text-sm text-muted-foreground">{formatDate(doc.updatedAt)}</span>
+                      </td>
+                      <td className="px-6 py-4 text-right">
+                        <button className="text-destructive hover:text-destructive-hover transition-colors">
+                          <TrashIcon className="h-5 w-5 inline" />
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </CardContent>
+      </Card>
     </div>
   );
 };

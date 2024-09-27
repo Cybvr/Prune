@@ -1,5 +1,3 @@
-'use client';
-
 import React from 'react';
 import { Droppable, Draggable } from 'react-beautiful-dnd';
 import KanbanCard from './KanbanCard';
@@ -9,6 +7,7 @@ type KanbanColumnProps = {
   column: KanbanColumnType;
   documents: Document[];
   handleDelete: (ids: string[]) => Promise<void>;
+  handleRename: (id: string, newTitle: string) => Promise<void>;
   toggleSelectDocument: (id: string) => void;
   selectedDocuments: string[];
 };
@@ -17,6 +16,7 @@ export default function KanbanColumn({
   column,
   documents,
   handleDelete,
+  handleRename,
   toggleSelectDocument,
   selectedDocuments,
 }: KanbanColumnProps) {
@@ -41,6 +41,7 @@ export default function KanbanColumn({
                       document={doc}
                       provided={provided}
                       handleDelete={handleDelete}
+                      handleRename={handleRename}
                       toggleSelectDocument={toggleSelectDocument}
                       isSelected={selectedDocuments.includes(draggableId)}
                     />

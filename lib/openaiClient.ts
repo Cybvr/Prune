@@ -1,11 +1,11 @@
-// app/lib/openaiClient.ts
+// lib/openaiClient.ts
+import { OpenAIApi } from 'openai';
 
-import { Configuration, OpenAIApi } from 'openai';
+const apiKey = process.env.OPENAI_API_KEY;
+console.log("Using API Key:", apiKey); // Add this line to verify the key is loaded
 
-const configuration = new Configuration({
-  apiKey: process.env.OPENAI_API_KEY, // Ensure this environment variable is set
+const openai = new OpenAIApi({
+  apiKey: apiKey,
 });
-
-const openai = new OpenAIApi(configuration);
 
 export default openai;

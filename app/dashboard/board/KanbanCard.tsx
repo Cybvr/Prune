@@ -55,7 +55,7 @@ export default function KanbanCard({
       ref={provided.innerRef}
       {...provided.draggableProps}
       {...provided.dragHandleProps}
-      className={`bg-popover p-4 mb-2 rounded-md shadow ${
+      className={`bg-background p-4 mb-2 rounded-md shadow ${
         isSelected ? 'border-2 border-primary' : ''
       } min-h-[120px] flex flex-col justify-between`}
     >

@@ -1,5 +1,4 @@
-'use client';
-
+'use client'
 import React, { useState, useEffect } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import { getAuth, onAuthStateChanged } from 'firebase/auth';
@@ -9,6 +8,8 @@ import DocumentOptions from '@/app/dashboard/components/DocumentOptions';
 import Editor from '@/app/dashboard/components/Editor';
 import { ArrowLeftIcon } from '@heroicons/react/24/outline';
 import { Button } from '@/components/ui/button';
+import MyDialog from '@/components/ui/MyDialog';
+import AIAssistant from '@/app/dashboard/components/AIAssistant'; // Add this line
 
 export default function EditDocumentPage() {
   const [title, setTitle] = useState('');
@@ -20,6 +21,7 @@ export default function EditDocumentPage() {
   const [favorite, setFavorite] = useState<boolean>(false);
   const [isSaving, setIsSaving] = useState(false);
   const [userId, setUserId] = useState<string | null>(null);
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
   const router = useRouter();
   const { id } = useParams();
   const auth = getAuth();
@@ -47,8 +49,8 @@ export default function EditDocumentPage() {
         setContent(documentData.content);
         setSelectedStatus(documentData.status);
         setSelectedPriority(documentData.priority);
-        setStartDate(documentData.start_date ? new Date(documentData.start_date.toDate()) : null); // Convert timestamp to Date
-        setEndDate(documentData.end_date ? new Date(documentData.end_date.toDate()) : null); // Convert timestamp to Date
+        setStartDate(documentData.start_date ? new Date(documentData.start_date.toDate()) : null);
+        setEndDate(documentData.end_date ? new Date(documentData.end_date.toDate()) : null);
         setFavorite(documentData.favorite);
       } else {
         console.error('No document found or unauthorized access');
@@ -58,7 +60,7 @@ export default function EditDocumentPage() {
     }
   };
 
-  const saveDocument = async () => {
+  const saveDocument = async (newContent?: string) => {
     if (!userId || !id) {
       console.error('User ID or document ID not available');
       return;
@@ -68,11 +70,11 @@ export default function EditDocumentPage() {
       const docRef = doc(db, 'documents', id);
       await updateDoc(docRef, {
         title,
-        content,
+        content: newContent || content,
         status: selectedStatus,
         priority: selectedPriority,
-        start_date: startDate ? startDate.toISOString() : null, // Convert Date to ISO string
-        end_date: endDate ? endDate.toISOString() : null, // Convert Date to ISO string
+        start_date: startDate ? startDate.toISOString() : null,
+        end_date: endDate ? endDate.toISOString() : null,
         favorite,
         updatedAt: new Date().toISOString(),
       });
@@ -90,6 +92,28 @@ export default function EditDocumentPage() {
 
   const handleContentChange = (newContent: string) => {
     setContent(newContent);
+  };
+
+  const handleGenerateContent = async (description: string) => {
+    try {
+      const response = await fetch('/api/generate', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ description }),
+      });
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      const data = await response.json();
+      const newContent = data.content;
+      setContent(newContent);
+      await saveDocument(newContent);
+    } catch (error) {
+      console.error('Error generating content:', error);
+      throw error; // Re-throw to be caught in MyDialog
+    }
   };
 
   return (
@@ -114,9 +138,12 @@ export default function EditDocumentPage() {
           <span className="hidden sm:inline text-sm text-gray-500 mr-4">
             {isSaving ? 'Saving...' : 'All changes saved'}
           </span>
+          <Button onClick={() => setIsDialogOpen(true)} className="bg-primary text-primary-foreground hover:bg-primary/90">
+            Generate Content
+          </Button>
           <Button
-            onClick={saveDocument}
-            className="bg-primary text-primary-foreground hover:bg-primary/90"
+            onClick={() => saveDocument()}
+            className="bg-primary text-primary-foreground hover:bg-primary/90 ml-2"
           >
             Save
           </Button>
@@ -129,9 +156,7 @@ export default function EditDocumentPage() {
             <Editor content={content} setContent={handleContentChange} />
           </div>
         </div>
-        <div className={`
-          lg:w-80 border-l overflow-auto p-4
-        `}>
+        <div className="lg:w-80 border-l overflow-auto p-4">
           <DocumentOptions
             selectedStatus={selectedStatus}
             setSelectedStatus={setSelectedStatus}
@@ -144,8 +169,17 @@ export default function EditDocumentPage() {
             favorite={favorite}
             setFavorite={setFavorite}
           />
+          <AIAssistant content={content} /> {/* Add this line */}
         </div>
       </div>
+
+      <MyDialog
+        open={isDialogOpen}
+        onOpenChange={setIsDialogOpen}
+        title="Generate Content"
+        subtitle="Describe what you want to generate:"
+        onSubmit={handleGenerateContent}
+      />
     </div>
   );
 }

@@ -1,20 +1,26 @@
 'use client';
 
-import React, { useState, useEffect, useCallback } from 'react';
+import * as React from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { collection, query, where, getDocs, deleteDoc, doc } from 'firebase/firestore';
 import { getAuth, onAuthStateChanged } from 'firebase/auth';
 import { db } from '@/firebase/firebaseConfig';
-import { ClipLoader } from 'react-spinners';
-import { DocumentIcon, TrashIcon, PlusIcon, XCircleIcon, MagnifyingGlassIcon } from '@heroicons/react/24/outline';
 import debounce from 'lodash/debounce';
 import Link from 'next/link';
-import { Toaster, toast } from 'sonner'; // Using sonner for toasts
+import { Toaster, toast } from 'sonner'; 
+import { PlusIcon, ListBulletIcon, Squares2X2Icon, DocumentIcon, MagnifyingGlassIcon, XCircleIcon } from '@heroicons/react/24/outline';
+import { ClipLoader } from 'react-spinners'; // Importing ClipLoader
 import { Button } from '@/components/ui/button';
+import { Separator } from '@/components/ui/separator';
+import DocumentsFilter from '@/app/dashboard/documents/DocumentsFilter';
+import DocumentsTable from '@/app/dashboard/documents/DocumentsTable';
 
 type Document = {
   id: string;
   title: string;
+  status: string;
+  priority: string;
   createdAt: Date;
   updatedAt: Date;
 };
@@ -24,6 +30,9 @@ export default function DocumentsPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState<string>('');
   const [selectedDocuments, setSelectedDocuments] = useState<string[]>([]);
+  const [sorting, setSorting] = useState<SortingState>([]);
+  const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
+  const [view, setView] = useState<'list' | 'cards'>('list');
   const router = useRouter();
 
   useEffect(() => {
@@ -43,14 +52,13 @@ export default function DocumentsPage() {
   const fetchDocuments = async (uid: string) => {
     try {
       setIsLoading(true);
-      const q = query(
-        collection(db, 'documents'),
-        where('userId', '==', uid)
-      );
+      const q = query(collection(db, 'documents'), where('userId', '==', uid));
       const querySnapshot = await getDocs(q);
       const docs = querySnapshot.docs.map((doc) => ({
         id: doc.id,
         title: doc.data().title,
+        status: doc.data().status,
+        priority: doc.data().priority,
         createdAt: new Date(doc.data().createdAt),
         updatedAt: new Date(doc.data().updatedAt),
       }));
@@ -103,10 +111,6 @@ export default function DocumentsPage() {
     []
   );
 
-  const filteredDocuments = documents.filter((doc) =>
-    doc.title.toLowerCase().includes(searchTerm.toLowerCase())
-  );
-
   const formatDate = (date: Date) => {
     return date.toLocaleDateString('en-US', {
       year: 'numeric',
@@ -117,6 +121,10 @@ export default function DocumentsPage() {
     });
   };
 
+  const filteredDocuments = documents.filter((doc) =>
+    doc.title.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
   return (
     <div className="p-4 min-h-screen bg-background text-foreground">
       <Toaster />
@@ -126,37 +134,43 @@ export default function DocumentsPage() {
           <h1 className="text-2xl font-bold">Documents</h1>
           <p className="text-sm text-muted-foreground">Manage your documents</p>
         </div>
-        <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
-          <div className="relative w-full sm:w-64">
-            <input
-              type="text"
-              placeholder="Search documents..."
-              className="w-full pl-10 pr-4 py-2 border border-input rounded"
-              onChange={(e) => handleSearchChange(e.target.value)}
-              value={searchTerm}
-            />
-            <MagnifyingGlassIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-muted-foreground" />
-            {searchTerm && (
-              <button
-                onClick={() => {
-                  setSearchTerm('');
-                  handleSearchChange('');
-                }}
-                className="absolute right-2 top-1/2 transform -translate-y-1/2"
-              >
-                <XCircleIcon className="h-5 w-5 text-muted-foreground" />
-              </button>
-            )}
-          </div>
+      </div>
+
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
+        <DocumentsFilter
+          setColumnFilters={setColumnFilters}
+          handleSearchChange={handleSearchChange}
+          searchTerm={searchTerm}
+        />
+
+        <div className="flex items-center space-x-2">
+          {/* New document button */}
           <Link
             href="/dashboard/documents/new"
-            className="px-4 py-2 bg-muted text-primary rounded-sm hover:bg-card transition-colors flex items-center justify-center"
+            className="px-4 py-2 bg-primary text-primary-foreground rounded-sm hover:bg-primary/80 transition-colors flex items-center justify-center"
           >
             <PlusIcon className="inline-block w-5 h-5 mr-2" />
             New
           </Link>
+
+          {/* View toggle buttons */}
+          <button
+            onClick={() => setView('list')}
+            className={`p-2 border rounded ${view === 'list' ? 'border-foreground bg-secondary text-secondary-foreground' : 'border-muted bg-muted text-muted-foreground'}`}
+          >
+            <ListBulletIcon className="h-5 w-5" />
+          </button>
+          <button
+            onClick={() => setView('cards')}
+            className={`p-2 border rounded ${view === 'cards' ? 'border-foreground bg-secondary text-secondary-foreground' : 'border-muted bg-muted text-muted-foreground'}`}
+          >
+            <Squares2X2Icon className="h-5 w-5" />
+          </button>
         </div>
       </div>
+
+      <Separator className="my-4" />
+
       {isLoading ? (
         <div className="flex justify-center items-center h-64">
           <ClipLoader color="var(--ring)" size={50} />
@@ -165,64 +179,43 @@ export default function DocumentsPage() {
         <div className="text-center text-muted-foreground mt-8">
           No documents found. Create a new one to get started!
         </div>
+      ) : view === 'list' ? (
+        <DocumentsTable
+          documents={filteredDocuments}
+          columnFilters={columnFilters}
+          sorting={sorting}
+          setSorting={setSorting}
+          setColumnFilters={setColumnFilters}
+          selectedDocuments={selectedDocuments}
+          toggleSelectDocument={toggleSelectDocument}
+        />
       ) : (
-        <div className="overflow-x-auto">
-          <table className="min-w-full divide-y divide-border">
-            <thead className="bg-card">
-              <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-card-foreground uppercase tracking-wider">
-                  <input
-                    type="checkbox"
-                    checked={selectedDocuments.length === filteredDocuments.length}
-                    onChange={(e) =>
-                      setSelectedDocuments(e.target.checked ? filteredDocuments.map((doc) => doc.id) : [])
-                    }
-                  />
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-card-foreground uppercase tracking-wider">
-                  Title
-                </th>
-                <th className="px-6 py-3 text-right text-xs font-medium text-card-foreground uppercase tracking-wider">
-                  Last Updated
-                </th>
-                <th className="px-6 py-3 text-right text-xs font-medium text-card-foreground uppercase tracking-wider">
-                  Actions
-                </th>
-              </tr>
-            </thead>
-            <tbody className="bg-popover divide-y divide-border">
-              {filteredDocuments.map((doc) => (
-                <tr key={doc.id} className="hover:bg-muted/50 transition-colors">
-                  <td className="px-6 py-4">
-                    <input
-                      type="checkbox"
-                      checked={selectedDocuments.includes(doc.id)}
-                      onChange={() => toggleSelectDocument(doc.id)}
-                    />
-                  </td>
-                  <td className="px-6 py-4">
-                    <div className="flex items-center">
-                      <DocumentIcon className="h-5 w-5 text-primary mr-2" />
-                      <Link href={`/dashboard/documents/${doc.id}`} className="text-sm font-medium text-foreground">
-                        {doc.title}
-                      </Link>
-                    </div>
-                  </td>
-                  <td className="px-6 py-4 text-right">
-                    <span className="text-sm text-muted-foreground">{formatDate(doc.updatedAt)}</span>
-                  </td>
-                  <td className="px-6 py-4 text-right">
-                    <button
-                      onClick={() => toggleSelectDocument(doc.id)}
-                      className="text-sm text-destructive hover:underline"
-                    >
-                      Delete
-                    </button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          {filteredDocuments.map((doc) => (
+            <div key={doc.id} className="bg-card p-4 rounded shadow hover:shadow-md transition-shadow">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center">
+                  <DocumentIcon className="h-5 w-5 text-primary mr-2" />
+                  <Link href={`/dashboard/documents/${doc.id}`} className="text-sm font-medium text-foreground hover:underline">
+                    {doc.title}
+                  </Link>
+                </div>
+                <input
+                  type="checkbox"
+                  checked={selectedDocuments.includes(doc.id)}
+                  onChange={() => toggleSelectDocument(doc.id)}
+                  className="text-primary-foreground bg-background border-input"
+                />
+              </div>
+              <p className="text-xs text-muted-foreground mt-2">{formatDate(doc.updatedAt)}</p>
+              <button
+                onClick={() => toggleSelectDocument(doc.id)}
+                className="text-sm text-destructive hover:underline mt-2"
+              >
+                Delete
+              </button>
+            </div>
+          ))}
         </div>
       )}
     </div>

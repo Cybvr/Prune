@@ -83,7 +83,7 @@ const RecentlyOpened: React.FC<{ sidebarCollapsed: boolean }> = ({ sidebarCollap
 
   return (
     <div className="mt-4">
-      <h3 className={cn("px-2 py-1 text-xs text-muted-foreground font-semibold", sidebarCollapsed ? "hidden" : "block")}>
+      <h3 className={cn("px-2 py-1 text-xs mb-2 text-muted-foreground font-semibold", sidebarCollapsed ? "hidden" : "block")}>
         Recently Opened
       </h3>
       {loading ? (

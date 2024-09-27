@@ -1,5 +1,4 @@
-'use client';
-
+'use client'
 import React, { useState, useMemo } from 'react';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import {
@@ -13,14 +12,14 @@ import {
   BookOpenIcon,
   HashtagIcon,
 } from '@heroicons/react/24/outline';
-import { useRouter } from 'next/router'; // Ensure correct import
+import { useRouter } from 'next/navigation';
 import MyDialog from '@/components/ui/MyDialog';
 import { collection, addDoc } from 'firebase/firestore';
 import { db } from '@/firebase/firebaseConfig';
 
 type CategoryItem = {
   title: string;
-  subtitle: string;
+  subtitle: string; // Add subtitle to CategoryItem
   icon: React.ReactNode;
 };
 
@@ -54,7 +53,7 @@ const TemplatePage: React.FC = () => {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [dialogTitle, setDialogTitle] = useState('');
   const [dialogSubtitle, setDialogSubtitle] = useState('');
-  const router = useRouter(); // Ensure proper hook usage within a page component
+  const router = useRouter();
 
   const categories: Record<string, CategoryItem[]> = {
     All: [

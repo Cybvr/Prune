@@ -1,5 +1,4 @@
 'use client';
-
 import React, { useState, useEffect } from 'react';
 import { DragDropContext, DropResult } from 'react-beautiful-dnd';
 import { useRouter } from 'next/navigation';
@@ -10,7 +9,6 @@ import { ClipLoader } from 'react-spinners';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import KanbanColumn from './KanbanColumn';
-import SearchBar from '@/app/dashboard/board/SearchBar';
 import { Document, KanbanColumnType } from '@/types/kanban';
 import { Toaster } from '@/components/ui/toaster';
 
@@ -25,7 +23,6 @@ const columns: KanbanColumnType[] = [
 export default function KanbanBoard() {
   const [documents, setDocuments] = useState<Document[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [searchTerm, setSearchTerm] = useState<string>('');
   const [selectedDocuments, setSelectedDocuments] = useState<string[]>([]);
   const router = useRouter();
 
@@ -115,7 +112,7 @@ export default function KanbanBoard() {
     }
 
     const updatedDocuments = Array.from(documents);
-    const documentIndex = updatedDocuments.findIndex(doc => doc.id === draggableId);
+    const documentIndex = updatedDocuments.findIndex(doc => String(doc.id) === draggableId);
 
     if (documentIndex === -1) {
       console.error(`Document with id ${draggableId} not found`);
@@ -143,10 +140,6 @@ export default function KanbanBoard() {
     }
   };
 
-  const filteredDocuments = documents.filter((doc) =>
-    doc.title.toLowerCase().includes(searchTerm.toLowerCase())
-  );
-
   const toggleSelectDocument = (id: string) => {
     setSelectedDocuments(prev =>
       prev.includes(id) ? prev.filter(docId => docId !== id) : [...prev, id]
@@ -166,10 +159,9 @@ export default function KanbanBoard() {
       <Toaster />
       <header className="p-4 border-b border-border">
         <h1 className="text-2xl font-bold">Board</h1>
-        <p className="text-sm text-muted-foreground">Document Kanban Board</p>
+        <p className="text-xs text-muted-foreground">Organize your time</p>
       </header>
       <main className="flex flex-1 flex-col p-4 overflow-hidden">
-        <SearchBar searchTerm={searchTerm} setSearchTerm={setSearchTerm} />
         {selectedDocuments.length > 0 && (
           <div className="mb-4 flex items-center justify-between">
             <span>{selectedDocuments.length} item(s) selected</span>
@@ -184,7 +176,7 @@ export default function KanbanBoard() {
               <KanbanColumn
                 key={column.id}
                 column={column}
-                documents={filteredDocuments.filter((doc) => doc.status === column.id)}
+                documents={documents.filter((doc) => doc.status === column.id)}
                 handleDelete={handleDelete}
                 handleRename={handleRename}
                 toggleSelectDocument={toggleSelectDocument}
