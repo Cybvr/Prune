@@ -6,17 +6,17 @@ import { Button } from '@/components/ui/button';
 import { Popover, PopoverTrigger, PopoverContent } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
 import { StarIcon, CalendarIcon } from '@heroicons/react/24/outline';
-import { format, parseISO } from 'date-fns';
+import format from 'date-fns/format';
 
 interface DocumentOptionsProps {
   selectedStatus: string | null;
   setSelectedStatus: (status: string | null) => void;
   selectedPriority: string | null;
   setSelectedPriority: (priority: string | null) => void;
-  startDate: string | null;
-  setStartDate: (date: string | null) => void;
-  endDate: string | null;
-  setEndDate: (date: string | null) => void;
+  startDate: Date | null;
+  setStartDate: (date: Date | null) => void;
+  endDate: Date | null;
+  setEndDate: (date: Date | null) => void;
   favorite: boolean;
   setFavorite: (fav: boolean) => void;
 }
@@ -36,23 +36,15 @@ const DocumentOptions: React.FC<DocumentOptionsProps> = ({
   favorite,
   setFavorite,
 }) => {
-  // Convert ISO string dates to Date objects for the Calendar component
-  const startDateFormatted = startDate ? parseISO(startDate) : null;
-  const endDateFormatted = endDate ? parseISO(endDate) : null;
-
-  const handleStartDateChange = (date: Date | null) => {
-    setStartDate(date ? date.toISOString() : null);
-  };
-
-  const handleEndDateChange = (date: Date | null) => {
-    setEndDate(date ? date.toISOString() : null);
-  };
+  // Ensure dates are converted to the correct format for the Calendar component
+  const startDateFormatted = startDate ? new Date(startDate) : null;
+  const endDateFormatted = endDate ? new Date(endDate) : null;
 
   return (
-    <div className="bg-white p-2 shadow-md rounded-md text-sm">
+    <div className="p-2 shadow-md rounded-md text-sm bg-card text-card-foreground">
       <div className="mb-2">
-        <label className="block text-xs font-semibold mb-1">Status</label>
-        <Select value={selectedStatus || undefined} onValueChange={setSelectedStatus}>
+        <label className="block text-xs font-semibold mb-1 text-muted-foreground">Status</label>
+        <Select value={selectedStatus} onValueChange={setSelectedStatus}>
           <SelectTrigger className="text-xs">
             <SelectValue placeholder="Select a status" />
           </SelectTrigger>
@@ -65,8 +57,8 @@ const DocumentOptions: React.FC<DocumentOptionsProps> = ({
       </div>
 
       <div className="mb-2">
-        <label className="block text-xs font-semibold mb-1">Priority</label>
-        <Select value={selectedPriority || undefined} onValueChange={setSelectedPriority}>
+        <label className="block text-xs font-semibold mb-1 text-muted-foreground">Priority</label>
+        <Select value={selectedPriority} onValueChange={setSelectedPriority}>
           <SelectTrigger className="text-xs">
             <SelectValue placeholder="Select a priority" />
           </SelectTrigger>
@@ -79,41 +71,31 @@ const DocumentOptions: React.FC<DocumentOptionsProps> = ({
       </div>
 
       <div className="mb-2">
-        <label className="block text-xs font-semibold mb-1">Start Date</label>
+        <label className="block text-xs font-semibold mb-1 text-muted-foreground">Start Date</label>
         <Popover>
           <PopoverTrigger asChild>
-            <Button variant="outline" className="w-full justify-between text-xs">
+            <Button variant="outline" className="w-full justify-between text-xs bg-background text-foreground">
               {startDateFormatted ? format(startDateFormatted, 'PPP') : 'Select start date'}
               <CalendarIcon className="h-4 w-4" />
             </Button>
           </PopoverTrigger>
           <PopoverContent className="text-xs">
-            <Calendar
-              mode="single"
-              selected={startDateFormatted}
-              onSelect={handleStartDateChange}
-              initialFocus
-            />
+            <Calendar selected={startDateFormatted} onDateChange={setStartDate} />
           </PopoverContent>
         </Popover>
       </div>
 
       <div className="mb-2">
-        <label className="block text-xs font-semibold mb-1">End Date</label>
+        <label className="block text-xs font-semibold mb-1 text-muted-foreground">End Date</label>
         <Popover>
           <PopoverTrigger asChild>
-            <Button variant="outline" className="w-full justify-between text-xs">
+            <Button variant="outline" className="w-full justify-between text-xs bg-background text-foreground">
               {endDateFormatted ? format(endDateFormatted, 'PPP') : 'Select end date'}
               <CalendarIcon className="h-4 w-4" />
             </Button>
           </PopoverTrigger>
           <PopoverContent className="text-xs">
-            <Calendar
-              mode="single"
-              selected={endDateFormatted}
-              onSelect={handleEndDateChange}
-              initialFocus
-            />
+            <Calendar selected={endDateFormatted} onDateChange={setEndDate} />
           </PopoverContent>
         </Popover>
       </div>
@@ -122,9 +104,9 @@ const DocumentOptions: React.FC<DocumentOptionsProps> = ({
         <Button
           variant={favorite ? "solid" : "outline"}
           onClick={() => setFavorite(!favorite)}
-          className="w-full text-xs"
+          className={`w-full text-xs ${favorite ? "bg-secondary text-primary" : "bg-background text-foreground"}`}
         >
-          <StarIcon className={`h-4 w-4 mr-2 ${favorite ? "text-yellow-400" : "text-gray-500"}`} />
+          <StarIcon className={`h-4 w-4 mr-2 ${favorite ? "text-yellow-400" : "text-muted-foreground"}`} />
           {favorite ? "Marked as Favorite" : "Mark as Favorite"}
         </Button>
       </div>

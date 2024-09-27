@@ -94,7 +94,7 @@ const CoachPage: React.FC = () => {
         <aside className="w-1/4 p-4 border-r border-border overflow-y-auto">
           <OptionsSelect options={options} selectedOption={selectedOption} onOptionClick={handleOptionClick} />
           <UserInput value={userInput} onChange={handleInputChange} />
-          <Button onClick={handleSubmit} className="w-full mb-4 text-sm bg-primary text-primary-foreground hover:bg-primary/90">
+          <Button onClick={handleSubmit} className="w-full mb-4 text-sm bg-muted text-primary hover:bg-primary/90">
             Submit
           </Button>
           <ExamplesList examples={examples} />

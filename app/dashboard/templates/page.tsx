@@ -1,208 +1,182 @@
 'use client';
 
-import React, { useState, useEffect, useCallback } from 'react';
-import { useRouter } from 'next/router';
-import { collection, query, where, getDocs, deleteDoc, doc } from 'firebase/firestore';
-import { getAuth, onAuthStateChanged } from 'firebase/auth';
+import React, { useState, useMemo } from 'react';
+import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
+import {
+  DocumentIcon,
+  ListBulletIcon,
+  ClipboardIcon,
+  BriefcaseIcon,
+  ChartBarIcon,
+  PencilIcon,
+  LightBulbIcon,
+  BookOpenIcon,
+  HashtagIcon,
+} from '@heroicons/react/24/outline';
+import { useRouter } from 'next/router'; // Ensure correct import
+import MyDialog from '@/components/ui/MyDialog';
+import { collection, addDoc } from 'firebase/firestore';
 import { db } from '@/firebase/firebaseConfig';
-import { ClipLoader } from 'react-spinners';
-import { DocumentIcon, TrashIcon, SpeakerphoneIcon } from '@heroicons/react/24/outline';
-import debounce from 'lodash/debounce';
-import Link from 'next/link';
 
-type Template = {
-  id: string;
+type CategoryItem = {
   title: string;
-  createdAt: Date;
-  updatedAt: Date;
+  subtitle: string;
+  icon: React.ReactNode;
 };
 
-const TemplatesPage: React.FC = () => {
-  const [templates, setTemplates] = useState<Template[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [userId, setUserId] = useState<string | null>(null);
+const TileCard: React.FC<{
+  title: string;
+  subtitle: string;
+  icon: React.ReactNode;
+  selected: boolean;
+  onClick: () => void;
+}> = ({ title, subtitle, icon, selected, onClick }) => (
+  <div
+    onClick={onClick}
+    className={`cursor-pointer border rounded-lg p-4 flex items-center space-x-4 ${
+      selected ? 'border-primary' : 'border-muted'
+    } hover:shadow-lg transition-shadow duration-300`}
+  >
+    <div className="w-8 h-8 flex items-center justify-center bg-muted rounded-full text-primary"> {/* Small circle for icon */}
+      {icon}
+    </div>
+    <div>
+      <h3 className="text-sm font-semibold">{title}</h3>
+      <p className="text-xs text-muted-foreground">{subtitle}</p>
+    </div>
+  </div>
+);
+
+const TemplatePage: React.FC = () => {
+  const [selectedItem, setSelectedItem] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState<string>('');
-  const [selectedTemplates, setSelectedTemplates] = useState<Set<string>>(new Set());
-  const router = useRouter();
+  const [activeTab, setActiveTab] = useState<string>('All');
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [dialogTitle, setDialogTitle] = useState('');
+  const [dialogSubtitle, setDialogSubtitle] = useState('');
+  const router = useRouter(); // Ensure proper hook usage within a page component
 
-  useEffect(() => {
-    const auth = getAuth();
-    const unsubscribe = onAuthStateChanged(auth, (user) => {
-      if (user) {
-        setUserId(user.uid);
-        fetchTemplates(user.uid);
-      } else {
-        setIsLoading(false);
-        router.push('/auth/login');
-      }
-    });
+  const categories: Record<string, CategoryItem[]> = {
+    All: [
+      { title: 'Summarize text', subtitle: 'Get a brief summary', icon: <DocumentIcon className="h-4 w-4" /> },
+      { title: 'List action items', subtitle: 'Create a task list', icon: <ListBulletIcon className="h-4 w-4" /> },
+      { title: 'Create a to-do list', subtitle: 'Organize your tasks', icon: <ClipboardIcon className="h-4 w-4" /> },
+      { title: 'Draft a meeting Agenda', subtitle: 'Prepare your meetings', icon: <ClipboardIcon className="h-4 w-4" /> },
+      { title: 'Create a Job Proposal', subtitle: 'Draft a job proposal', icon: <BriefcaseIcon className="h-4 w-4" /> },
+      { title: 'Write a Business Plan draft', subtitle: 'Create a business plan', icon: <ClipboardIcon className="h-4 w-4" /> },
+      { title: 'Elevator Pitch', subtitle: 'Write an elevator pitch', icon: <LightBulbIcon className="h-4 w-4" /> },
+      { title: 'Write a Poem', subtitle: 'Create a poem', icon: <PencilIcon className="h-4 w-4" /> },
+      { title: 'Write a Short Story Draft', subtitle: 'Draft a short story', icon: <BookOpenIcon className="h-4 w-4" /> },
+      { title: 'Get SEO Guides', subtitle: 'Improve SEO strategy', icon: <HashtagIcon className="h-4 w-4" /> },
+      { title: 'Create a Blog Post', subtitle: 'Write a blog entry', icon: <ChartBarIcon className="h-4 w-4" /> },
+    ],
+    Productivity: [
+      { title: 'Summarize text', subtitle: 'Get a brief summary', icon: <DocumentIcon className="h-4 w-4" /> },
+      { title: 'List action items', subtitle: 'Create a task list', icon: <ListBulletIcon className="h-4 w-4" /> },
+      { title: 'Create a to-do list', subtitle: 'Organize your tasks', icon: <ClipboardIcon className="h-4 w-4" /> },
+      { title: 'Draft a meeting Agenda', subtitle: 'Prepare your meetings', icon: <ClipboardIcon className="h-4 w-4" /> },
+    ],
+    Business: [
+      { title: 'Create a Job Proposal', subtitle: 'Draft a job proposal', icon: <BriefcaseIcon className="h-4 w-4" /> },
+      { title: 'Write a Business Plan draft', subtitle: 'Create a business plan', icon: <ClipboardIcon className="h-4 w-4" /> },
+      { title: 'Elevator Pitch', subtitle: 'Write an elevator pitch', icon: <LightBulbIcon className="h-4 w-4" /> },
+    ],
+    Art: [
+      { title: 'Write a Poem', subtitle: 'Create a poem', icon: <PencilIcon className="h-4 w-4" /> },
+      { title: 'Write a Short Story Draft', subtitle: 'Draft a short story', icon: <BookOpenIcon className="h-4 w-4" /> },
+    ],
+    Marketing: [
+      { title: 'Get SEO Guides', subtitle: 'Improve SEO strategy', icon: <HashtagIcon className="h-4 w-4" /> },
+      { title: 'Create a Blog Post', subtitle: 'Write a blog entry', icon: <ChartBarIcon className="h-4 w-4" /> },
+    ],
+  };
 
-    return () => unsubscribe();
-  }, [router]);
+  const filteredItems = useMemo(() => {
+    const activeItems = activeTab === 'All' ? categories.All : categories[activeTab];
+    return activeItems.filter((item) => item.title.toLowerCase().includes(searchTerm.toLowerCase()));
+  }, [searchTerm, activeTab]);
 
-  const fetchTemplates = async (uid: string) => {
+  const handleTileClick = (title: string) => {
+    setSelectedItem(title);
+    setDialogTitle(title);
+    setDialogSubtitle(`Describe what you want for ${title.toLowerCase()}`); // Set subtitle dynamically based on the title
+    setIsDialogOpen(true);
+  };
+
+  const handleDialogSubmit = async (description: string) => {
     try {
-      setIsLoading(true);
-      const q = query(
-        collection(db, 'templates'),
-        where('userId', '==', uid)
-      );
-      const querySnapshot = await getDocs(q);
-      const docs = querySnapshot.docs.map(doc => {
-        const data = doc.data();
-        return {
-          id: doc.id,
-          title: data.title,
-          createdAt: new Date(data.createdAt),
-          updatedAt: new Date(data.updatedAt),
-        } as Template;
+      const response = await fetch('/api/generate', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ description }),
       });
-      setTemplates(docs);
+
+      const data = await response.json();
+
+      const newDoc = {
+        title: dialogTitle,
+        content: data.content,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      };
+
+      const docRef = await addDoc(collection(db, 'documents'), newDoc);
+
+      router.push(`/dashboard/documents/${docRef.id}`);
     } catch (error) {
-      console.error('Error fetching templates:', error);
-    } finally {
-      setIsLoading(false);
+      console.error('Error generating document:', error);
     }
   };
 
-  const handleDelete = async () => {
-    if (window.confirm('Are you sure you want to delete the selected templates?')) {
-      try {
-        const deletePromises = Array.from(selectedTemplates).map(docId =>
-          deleteDoc(doc(db, 'templates', docId))
-        );
-        await Promise.all(deletePromises);
-        setTemplates(templates.filter(doc => !selectedTemplates.has(doc.id)));
-        setSelectedTemplates(new Set());
-      } catch (error) {
-        console.error('Error deleting templates:', error);
-      }
-    }
-  };
-
-  const handleSearchChange = useCallback(debounce((e: React.ChangeEvent<HTMLInputElement>) => {
-    setSearchTerm(e.target.value);
-  }, 300), []);
-
-  const filteredTemplates = templates.filter(doc => 
-    doc.title.toLowerCase().includes(searchTerm.toLowerCase())
-  );
-
-  const handleCheckboxChange = (docId: string) => {
-    setSelectedTemplates((prev) => {
-      const updated = new Set(prev);
-      if (updated.has(docId)) {
-        updated.delete(docId);
-      } else {
-        updated.add(docId);
-      }
-      return updated;
-    });
-  };
-
-  const formatDate = (date: Date) => {
-    return date.toLocaleDateString('en-US', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit'
-    });
-  };
-
- return (
+  return (
     <div className="p-2 min-h-screen bg-background text-foreground">
-      <div className="flex justify-between items-center mb-6">
-        <div>
-          <h1 className="text-2xl font-bold">Templates</h1>
-          <p className="text-sm text-muted-foreground">Create and manage your templates</p>
-        </div>
-        <div className="flex gap-2">
-          <input
-            type="text"
-            placeholder="Search templates..."
-            className="p-2 border border-input rounded"
-            onChange={handleSearchChange}
-          />
-          <Link
-            href="/dashboard/templates/new"
-            className="px-4 py-2 border border-primary text-primary rounded-sm hover:bg-primary transition-colors"
-          >
-            <DocumentIcon className="inline-block w-5 h-5 mr-2" />
-            Blank
-          </Link>
-          <button
-            onClick={handleDelete}
-            className="px-4 py-2 bg-primary text-primary-foreground rounded-sm hover:bg-primary-hover transition-colors"
-          >
-            <TrashIcon className="inline-block w-5 h-5 mr-2" />
-            Delete
-          </button>
-        </div>
+      <div className="flex justify-between items-center mb-4">
+        <h1 className="text-2xl font-bold">Templates</h1>
+        <input
+          type="text"
+          placeholder="Search..."
+          className="p-2 border rounded"
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+        />
       </div>
-      {isLoading ? (
-        <div className="flex justify-center items-center h-64">
-          <ClipLoader color="var(--ring)" size={50} />
+      <Tabs defaultValue="All" onValueChange={setActiveTab}>
+        <div className="flex justify-between items-center">
+          <TabsList className="flex space-x-2">
+            {Object.keys(categories).map((category) => (
+              <TabsTrigger key={category} value={category}>
+                {category}
+              </TabsTrigger>
+            ))}
+          </TabsList>
         </div>
-      ) : (
-        <div className="overflow-x-auto">
-          <table className="min-w-full divide-y divide-border">
-            <thead className="bg-card">
-              <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-card-foreground uppercase tracking-wider">
-                  <input
-                    type="checkbox"
-                    onChange={(e) => {
-                      const isChecked = e.target.checked;
-                      if (isChecked) {
-                        const allDocIds = templates.map(doc => doc.id);
-                        setSelectedTemplates(new Set(allDocIds));
-                      } else {
-                        setSelectedTemplates(new Set());
-                      }
-                    }}
-                  />
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-card-foreground uppercase tracking-wider">
-                  Title
-                </th>
-                <th className="px-6 py-3 text-right text-xs font-medium text-card-foreground uppercase tracking-wider">
-                  Last Updated
-                </th>
-              </tr>
-            </thead>
-            <tbody className="bg-popover divide-y divide-border">
-              {filteredTemplates.map((doc) => (
-                <tr key={doc.id} onClick={() => router.push(`/dashboard/templates/${doc.id}`)} className="cursor-pointer">
-                  <td className="px-6 py-4" onClick={(e) => e.stopPropagation()}>
-                    <input
-                      type="checkbox"
-                      checked={selectedTemplates.has(doc.id)}
-                      onChange={(e) => {
-                        e.stopPropagation();
-                        handleCheckboxChange(doc.id);
-                      }}
-                    />
-                  </td>
-                  <td className="px-6 py-4">
-                    <div className="text-primary-foreground flex items-center">
-                      <div className="flex items-center justify-center w-6 h-6 bg-blue-100 text-blue-500 rounded-full mr-2">
-                        <DocumentIcon className="h-4 w-4" />
-                      </div>
-                      <div className="text-sm font-medium text-foreground">{doc.title}</div>
-                    </div>
-                  </td>
-                  <td className="px-6 py-4 text-right">
-                    <div className="text-sm text-muted-foreground">{formatDate(doc.updatedAt)}</div>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      )}
+        <TabsContent value={activeTab}>
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 mt-4">
+            {filteredItems.map((item) => (
+              <TileCard
+                key={item.title}
+                title={item.title}
+                subtitle={item.subtitle} // Pass subtitle to TileCard
+                icon={item.icon}
+                selected={selectedItem === item.title}
+                onClick={() => handleTileClick(item.title)}
+              />
+            ))}
+          </div>
+        </TabsContent>
+      </Tabs>
+
+      <MyDialog
+        open={isDialogOpen}
+        onOpenChange={setIsDialogOpen}
+        title={dialogTitle}
+        subtitle={dialogSubtitle} // Pass the subtitle to the dialog
+        onSubmit={handleDialogSubmit} // Handle the dialog submit event
+      />
     </div>
   );
 };
 
-export default TemplatesPage;
+export default TemplatePage;

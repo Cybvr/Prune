@@ -83,7 +83,7 @@ const RecentlyOpened: React.FC<{ sidebarCollapsed: boolean }> = ({ sidebarCollap
 
   return (
     <div className="mt-4">
-      <h3 className={cn("px-2 py-1 text-xs font-semibold", sidebarCollapsed ? "hidden" : "block")}>
+      <h3 className={cn("px-2 py-1 text-xs text-muted-foreground font-semibold", sidebarCollapsed ? "hidden" : "block")}>
         Recently Opened
       </h3>
       {loading ? (
@@ -91,7 +91,7 @@ const RecentlyOpened: React.FC<{ sidebarCollapsed: boolean }> = ({ sidebarCollap
       ) : recentItems.length > 0 ? (
         <ul className="space-y-1">
           {recentItems.map((item) => (
-            <li key={item.id} className="flex items-center justify-between px-1 py-1 text-xs font-normal rounded-md text-foreground hover:bg-primary hover:text-primary-foreground">
+            <li key={item.id} className="flex items-center justify-between px-1 py-1 text-md font-normal rounded-md text-foreground hover:bg-secondary hover:text-secondary-foreground">
               {editingDocument === item.id ? (
                 <input
                   type="text"
@@ -99,17 +99,16 @@ const RecentlyOpened: React.FC<{ sidebarCollapsed: boolean }> = ({ sidebarCollap
                   onChange={(e) => setNewTitle(e.target.value)}
                   onBlur={() => setEditingDocument(null)}
                   onKeyUp={(e) => e.key === 'Enter' && handleRename(item.id)}
-                  className="flex-grow p-1 text-xs border border-input rounded-md"
+                  className="flex-grow p-1 text-md border border-input rounded-md"
                 />
               ) : (
                 <Link href={item.href} className="flex items-center space-x-2">
                   <item.icon className="h-4 w-4" />
-                  <span className="truncate" style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: '18ch' }}>
+                  <span className="text-sm truncate" style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: '18ch' }}>
                     {item.name}
                   </span>
                 </Link>
               )}
-
               <Menu as="div" className="relative">
                 <Menu.Button className="p-1">
                   <EllipsisVerticalIcon className="h-4 w-4" />
@@ -123,11 +122,11 @@ const RecentlyOpened: React.FC<{ sidebarCollapsed: boolean }> = ({ sidebarCollap
                   leaveFrom="transform opacity-100 scale-100"
                   leaveTo="transform opacity-0 scale-95"
                 >
-                  <Menu.Items className="absolute right-0 mt-2 w-48 py-1 bg-white shadow-md ring-1 ring-black ring-opacity-5 rounded-md text-xs">
+                  <Menu.Items className="absolute right-0 mt-2 w-48 py-1 bg-background shadow-md ring-1 ring-border ring-opacity-5 rounded-md text-md">
                     <Menu.Item>
                       {({ active }) => (
                         <button
-                          className={`${active ? 'bg-gray-100' : ''} flex px-4 py-2 w-full text-left`}
+                          className={`${active ? 'bg-muted' : ''} flex px-4 py-2 w-full text-left`}
                           onClick={() => setEditingDocument(item.id)}
                         >
                           Rename
@@ -137,7 +136,7 @@ const RecentlyOpened: React.FC<{ sidebarCollapsed: boolean }> = ({ sidebarCollap
                     <Menu.Item>
                       {({ active }) => (
                         <button
-                          className={`${active ? 'bg-gray-100' : ''} flex px-4 py-2 w-full text-left`}
+                          className={`${active ? 'bg-muted' : ''} flex px-4 py-2 w-full text-left`}
                           onClick={() => handleDelete(item.id)}
                         >
                           Delete
@@ -151,7 +150,7 @@ const RecentlyOpened: React.FC<{ sidebarCollapsed: boolean }> = ({ sidebarCollap
           ))}
         </ul>
       ) : (
-        <p>No recently opened documents</p>
+        <p className="text-xs">No recently opened documents</p>
       )}
     </div>
   );

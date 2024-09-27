@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { DragDropContext, DropResult, Droppable, Draggable } from 'react-beautiful-dnd';
+import { DragDropContext, DropResult } from 'react-beautiful-dnd';
 import { useRouter } from 'next/navigation';
 import { getAuth, onAuthStateChanged } from 'firebase/auth';
 import { collection, query, where, getDocs, doc, updateDoc, writeBatch } from 'firebase/firestore';
@@ -9,7 +9,7 @@ import { db } from '@/firebase/firebaseConfig';
 import { ClipLoader } from 'react-spinners';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
-import KanbanCard from '@/app/dashboard/board/KanbanCard';
+import KanbanColumn from './KanbanColumn';
 import SearchBar from '@/app/dashboard/board/SearchBar';
 import { Document, KanbanColumnType } from '@/types/kanban';
 import { Toaster } from '@/components/ui/toaster';
@@ -51,12 +51,15 @@ export default function KanbanBoard() {
         where('userId', '==', uid)
       );
       const querySnapshot = await getDocs(q);
-      const docs = querySnapshot.docs.map((doc) => ({
-        id: doc.id,
-        ...doc.data(),
-        createdAt: doc.data().createdAt.toDate(),
-        updatedAt: doc.data().updatedAt.toDate(),
-      })) as Document[];
+      const docs = querySnapshot.docs.map((doc) => {
+        const data = doc.data();
+        return {
+          id: doc.id,
+          ...data,
+          createdAt: data.createdAt instanceof Date ? data.createdAt : new Date(data.createdAt),
+          updatedAt: data.updatedAt instanceof Date ? data.updatedAt : new Date(data.updatedAt),
+        } as Document;
+      });
       setDocuments(docs);
     } catch (error) {
       console.error('Error fetching documents:', error);
@@ -178,36 +181,15 @@ export default function KanbanBoard() {
         <DragDropContext onDragEnd={onDragEnd}>
           <div className="flex overflow-x-auto space-x-4">
             {columns.map((column) => (
-              <div key={column.id} className="flex-shrink-0 w-72">
-                <h2 className="font-semibold mb-2">{column.title}</h2>
-                <Droppable droppableId={column.id}>
-                  {(provided) => (
-                    <div
-                      {...provided.droppableProps}
-                      ref={provided.innerRef}
-                      className="bg-card p-2 rounded-md min-h-[200px]"
-                    >
-                      {filteredDocuments
-                        .filter((doc) => doc.status === column.id)
-                        .map((doc, index) => (
-                          <Draggable key={doc.id} draggableId={doc.id} index={index}>
-                            {(provided) => (
-                              <KanbanCard
-                                document={doc}
-                                provided={provided}
-                                handleDelete={handleDelete}
-                                handleRename={handleRename}
-                                toggleSelectDocument={toggleSelectDocument}
-                                isSelected={selectedDocuments.includes(doc.id)}
-                              />
-                            )}
-                          </Draggable>
-                        ))}
-                      {provided.placeholder}
-                    </div>
-                  )}
-                </Droppable>
-              </div>
+              <KanbanColumn
+                key={column.id}
+                column={column}
+                documents={filteredDocuments.filter((doc) => doc.status === column.id)}
+                handleDelete={handleDelete}
+                handleRename={handleRename}
+                toggleSelectDocument={toggleSelectDocument}
+                selectedDocuments={selectedDocuments}
+              />
             ))}
           </div>
         </DragDropContext>

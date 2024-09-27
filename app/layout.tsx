@@ -1,13 +1,13 @@
 // Update: app/layout.tsx
-
 import React from 'react';
 import { Inter, IBM_Plex_Sans } from 'next/font/google';
 import { Metadata } from 'next';
 import './styles/globals.css';
 import dynamic from 'next/dynamic';
 import '@/app/styles/quill.css';
-import 'draft-js/dist/Draft.css';
 import ErrorBoundary from '@/app/ErrorBoundary';
+import { GeistSans } from "geist/font/sans";
+
 
 const ClientWrapper = dynamic(() => import('./ClientWrapper'), { ssr: false });
 

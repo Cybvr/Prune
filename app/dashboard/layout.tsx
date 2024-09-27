@@ -80,7 +80,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             <Link
               key={item.name}
               href={item.href}
-              className="flex items-center px-1 py-1 text-xs font-normal rounded-md text-foreground hover:bg-primary hover:text-primary-foreground"
+              className="flex items-center px-1 py-1 text-sm font-normal rounded-md text-foreground hover:bg-secondary hover:text-secondary-foreground"
             >
               <item.icon className="mr-1 flex-shrink-0 h-4 w-4" />
               <span className={cn(
@@ -97,7 +97,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       <div className="space-y-2 pb-4">
         <Link
           href="/support"
-          className="flex items-center w-full px-1 py-1 text-xs font-normal rounded-md text-foreground hover:bg-primary hover:text-primary-foreground"
+          className="flex items-center w-full px-1 py-1 text-sm font-normal rounded-md text-foreground hover:bg-primary hover:text-primary-foreground"
         >
           <QuestionMarkCircleIcon className="mr-1 flex-shrink-0 h-4 w-4" />
           <span className={cn(

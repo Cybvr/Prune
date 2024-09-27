@@ -150,10 +150,10 @@ export default function DocumentsPage() {
           </div>
           <Link
             href="/dashboard/documents/new"
-            className="px-4 py-2 bg-primary text-primary-foreground rounded-sm hover:bg-primary/90 transition-colors flex items-center justify-center"
+            className="px-4 py-2 bg-muted text-primary rounded-sm hover:bg-card transition-colors flex items-center justify-center"
           >
             <PlusIcon className="inline-block w-5 h-5 mr-2" />
-            New Document
+            New
           </Link>
         </div>
       </div>
