@@ -1,120 +1,217 @@
-'use client'
-import React, { useState, useEffect } from 'react';
-import { DragDropContext, Droppable, Draggable } from 'react-beautiful-dnd';
-import { collection, query, where, getDocs, doc, updateDoc } from 'firebase/firestore';
-import { getAuth, onAuthStateChanged } from 'firebase/auth';
-import { db } from '@/firebase/firebaseConfig';
-import { Task, KanbanColumn } from './types'; // Assume we have Task and KanbanColumn types defined
-import { ClipLoader } from 'react-spinners';
+'use client';
 
-const KanbanBoard = () => {
-  const [tasks, setTasks] = useState<Task[]>([]);
-  const [loading, setLoading] = useState(true);
+import React, { useState, useEffect } from 'react';
+import { DragDropContext, DropResult, Droppable, Draggable } from 'react-beautiful-dnd';
+import { useRouter } from 'next/navigation';
+import { getAuth, onAuthStateChanged } from 'firebase/auth';
+import { collection, query, where, getDocs, doc, updateDoc, writeBatch } from 'firebase/firestore';
+import { db } from '@/firebase/firebaseConfig';
+import { ClipLoader } from 'react-spinners';
+import { toast } from 'sonner';
+import { Button } from '@/components/ui/button';
+import KanbanCard from '@/app/dashboard/board/KanbanCard';
+import SearchBar from '@/app/dashboard/board/SearchBar';
+import { Document, KanbanColumnType } from '@/types/kanban';
+import { Toaster } from '@/components/ui/toaster';
+
+const columns: KanbanColumnType[] = [
+  { id: 'Backlog', title: 'Backlog' },
+  { id: 'Planned', title: 'Planned' },
+  { id: 'In Progress', title: 'In Progress' },
+  { id: 'Completed', title: 'Completed' },
+  { id: 'Canceled', title: 'Canceled' },
+];
+
+export default function KanbanBoard() {
+  const [documents, setDocuments] = useState<Document[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [searchTerm, setSearchTerm] = useState<string>('');
+  const [selectedDocuments, setSelectedDocuments] = useState<string[]>([]);
+  const router = useRouter();
 
   useEffect(() => {
     const auth = getAuth();
     const unsubscribe = onAuthStateChanged(auth, (user) => {
       if (user) {
-        fetchTasks(user.uid);
+        fetchDocuments(user.uid);
       } else {
-        setLoading(false);
+        setIsLoading(false);
+        router.push('/auth/login');
       }
     });
 
     return () => unsubscribe();
-  }, []);
+  }, [router]);
 
-  const fetchTasks = async (uid: string) => {
-    setLoading(true);
-    const q = query(collection(db, 'tasks'), where('userId', '==', uid));
-    const querySnapshot = await getDocs(q);
-    const fetchedTasks = querySnapshot.docs.map(doc => ({
-      id: doc.id,
-      ...(doc.data() as Omit<Task, 'id'>),
-    }));
-    setTasks(fetchedTasks);
-    setLoading(false);
+  const fetchDocuments = async (uid: string) => {
+    try {
+      setIsLoading(true);
+      const q = query(
+        collection(db, 'documents'),
+        where('userId', '==', uid)
+      );
+      const querySnapshot = await getDocs(q);
+      const docs = querySnapshot.docs.map((doc) => ({
+        id: doc.id,
+        ...doc.data(),
+        createdAt: doc.data().createdAt.toDate(),
+        updatedAt: doc.data().updatedAt.toDate(),
+      })) as Document[];
+      setDocuments(docs);
+    } catch (error) {
+      console.error('Error fetching documents:', error);
+      toast.error('Error fetching documents.');
+    } finally {
+      setIsLoading(false);
+    }
   };
 
-  const onDragEnd = async (result: any) => {
+  const handleDelete = async (ids: string[]) => {
+    try {
+      const batch = writeBatch(db);
+      ids.forEach((id) => {
+        const docRef = doc(db, 'documents', id);
+        batch.update(docRef, { status: 'Canceled' });
+      });
+      await batch.commit();
+
+      setDocuments(documents.map(doc => 
+        ids.includes(doc.id) ? { ...doc, status: 'Canceled' } : doc
+      ));
+      setSelectedDocuments([]);
+      toast.success(`${ids.length} document(s) deleted.`);
+    } catch (error) {
+      console.error('Error deleting documents:', error);
+      toast.error('Error deleting documents.');
+    }
+  };
+
+  const handleRename = async (id: string, newTitle: string) => {
+    try {
+      await updateDoc(doc(db, 'documents', id), { title: newTitle });
+      setDocuments(documents.map(doc => 
+        doc.id === id ? { ...doc, title: newTitle } : doc
+      ));
+      toast.success('Document renamed successfully');
+    } catch (error) {
+      console.error('Error renaming document:', error);
+      toast.error('Error renaming document');
+    }
+  };
+
+  const onDragEnd = async (result: DropResult) => {
     const { destination, source, draggableId } = result;
 
     if (!destination) return;
 
-    const updatedTasks = Array.from(tasks);
-    const [movedTask] = updatedTasks.splice(source.index, 1);
-    movedTask.status = destination.droppableId;
-    updatedTasks.splice(destination.index, 0, movedTask);
+    if (
+      destination.droppableId === source.droppableId &&
+      destination.index === source.index
+    ) {
+      return;
+    }
 
-    const taskRef = doc(db, 'tasks', draggableId);
-    await updateDoc(taskRef, {
-      status: destination.droppableId
-    });
+    const updatedDocuments = Array.from(documents);
+    const documentIndex = updatedDocuments.findIndex(doc => doc.id === draggableId);
 
-    setTasks(updatedTasks);
+    if (documentIndex === -1) {
+      console.error(`Document with id ${draggableId} not found`);
+      return;
+    }
+
+    const [movedDocument] = updatedDocuments.splice(documentIndex, 1);
+    const updatedDocument = { ...movedDocument, status: destination.droppableId };
+
+    // Insert the document at the new position
+    updatedDocuments.splice(destination.index, 0, updatedDocument);
+
+    setDocuments(updatedDocuments);
+
+    try {
+      await updateDoc(doc(db, 'documents', draggableId), {
+        status: destination.droppableId,
+      });
+      toast.success(`Document moved to ${destination.droppableId}`);
+    } catch (error) {
+      console.error('Error updating document status:', error);
+      toast.error('Error updating document status');
+      // Revert the state if the database update fails
+      setDocuments(documents);
+    }
   };
 
-  const renderColumn = (status: KanbanColumn['status']) => (
-    <Droppable droppableId={status} key={status}>
-      {(provided) => (
-        <div
-          ref={provided.innerRef}
-          {...provided.droppableProps}
-          className="w-1/5 p-2 m-2 bg-gray-100 rounded-md"
-        >
-          <h2 className="text-xl font-semibold mb-2">{status}</h2>
-          {tasks.filter(task => task.status === status).map((task, index) => (
-            <Draggable key={task.id} draggableId={task.id} index={index}>
-              {(provided) => (
-                <div
-                  ref={provided.innerRef}
-                  {...provided.draggableProps}
-                  {...provided.dragHandleProps}
-                  className="p-2 mb-2 bg-white rounded-md shadow"
-                >
-                  <h3>{task.title}</h3>
-                </div>
-              )}
-            </Draggable>
-          ))}
-          {provided.placeholder}
-        </div>
-      )}
-    </Droppable>
+  const filteredDocuments = documents.filter((doc) =>
+    doc.title.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  if (loading) {
+  const toggleSelectDocument = (id: string) => {
+    setSelectedDocuments(prev =>
+      prev.includes(id) ? prev.filter(docId => docId !== id) : [...prev, id]
+    );
+  };
+
+  if (isLoading) {
     return (
-      <div className="flex justify-center items-center h-64">
-        <ClipLoader color="#4F46E5" size={50} />
+      <div className="flex justify-center items-center h-screen">
+        <ClipLoader color="var(--ring)" size={50} />
       </div>
     );
   }
 
   return (
-    <div className="flex flex-col h-screen bg-background text-foreground">
+    <div className="p-2 min-h-screen bg-background text-foreground">
+      <Toaster />
       <header className="p-4 border-b border-border">
-        <h1 className="text-2xl font-bold">Kanban Board</h1>
-        <p className="text-sm text-muted-foreground">Manage your tasks with ease</p>
+        <h1 className="text-2xl font-bold">Board</h1>
+        <p className="text-sm text-muted-foreground">Document Kanban Board</p>
       </header>
-      <main className="flex flex-1 overflow-hidden">
-        <aside className="w-1/4 p-4 border-r border-border overflow-y-auto">
-          {/* Add any sidebar content if needed */}
-        </aside>
-        <section className="w-3/4 p-4 overflow-y-auto bg-card text-card-foreground">
-          <DragDropContext onDragEnd={onDragEnd}>
-            <div className="flex">
-              {renderColumn('Backlog')}
-              {renderColumn('Planned')}
-              {renderColumn('In Progress')}
-              {renderColumn('Completed')}
-              {renderColumn('Canceled')}
-            </div>
-          </DragDropContext>
-        </section>
+      <main className="flex flex-1 flex-col p-4 overflow-hidden">
+        <SearchBar searchTerm={searchTerm} setSearchTerm={setSearchTerm} />
+        {selectedDocuments.length > 0 && (
+          <div className="mb-4 flex items-center justify-between">
+            <span>{selectedDocuments.length} item(s) selected</span>
+            <Button onClick={() => handleDelete(selectedDocuments)}>
+              Delete Selected
+            </Button>
+          </div>
+        )}
+        <DragDropContext onDragEnd={onDragEnd}>
+          <div className="flex overflow-x-auto space-x-4">
+            {columns.map((column) => (
+              <div key={column.id} className="flex-shrink-0 w-72">
+                <h2 className="font-semibold mb-2">{column.title}</h2>
+                <Droppable droppableId={column.id}>
+                  {(provided) => (
+                    <div
+                      {...provided.droppableProps}
+                      ref={provided.innerRef}
+                      className="bg-card p-2 rounded-md min-h-[200px]"
+                    >
+                      {filteredDocuments
+                        .filter((doc) => doc.status === column.id)
+                        .map((doc, index) => (
+                          <Draggable key={doc.id} draggableId={doc.id} index={index}>
+                            {(provided) => (
+                              <KanbanCard
+                                document={doc}
+                                provided={provided}
+                                handleDelete={handleDelete}
+                                handleRename={handleRename}
+                                toggleSelectDocument={toggleSelectDocument}
+                                isSelected={selectedDocuments.includes(doc.id)}
+                              />
+                            )}
+                          </Draggable>
+                        ))}
+                      {provided.placeholder}
+                    </div>
+                  )}
+                </Droppable>
+              </div>
+            ))}
+          </div>
+        </DragDropContext>
       </main>
     </div>
   );
-};
-
-export default KanbanBoard;
+}

@@ -1,5 +1,3 @@
-'use client';
-
 import React, { useEffect, useState, Fragment } from 'react';
 import Link from 'next/link';
 import { FolderIcon, EllipsisVerticalIcon } from '@heroicons/react/24/outline';
@@ -106,7 +104,9 @@ const RecentlyOpened: React.FC<{ sidebarCollapsed: boolean }> = ({ sidebarCollap
               ) : (
                 <Link href={item.href} className="flex items-center space-x-2">
                   <item.icon className="h-4 w-4" />
-                  <span>{item.name}</span>
+                  <span className="truncate" style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: '18ch' }}>
+                    {item.name}
+                  </span>
                 </Link>
               )}
 

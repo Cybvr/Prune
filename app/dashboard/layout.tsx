@@ -80,9 +80,9 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             <Link
               key={item.name}
               href={item.href}
-              className="flex items-center px-1 py-1 text-xs font-normal rounded-md text-foreground hover:bg-primary hover:text-primary-foreground" // Adjusted padding and font size
+              className="flex items-center px-1 py-1 text-xs font-normal rounded-md text-foreground hover:bg-primary hover:text-primary-foreground"
             >
-              <item.icon className="mr-1 flex-shrink-0 h-4 w-4" /> {/* Adjusted icon size */}
+              <item.icon className="mr-1 flex-shrink-0 h-4 w-4" />
               <span className={cn(
                 "transition-all duration-300 ease-in-out",
                 sidebarCollapsed ? "opacity-0 w-0" : "opacity-100"
@@ -97,9 +97,9 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       <div className="space-y-2 pb-4">
         <Link
           href="/support"
-          className="flex items-center w-full px-1 py-1 text-xs font-normal rounded-md text-foreground hover:bg-primary hover:text-primary-foreground" // Adjusted padding and font size
+          className="flex items-center w-full px-1 py-1 text-xs font-normal rounded-md text-foreground hover:bg-primary hover:text-primary-foreground"
         >
-          <QuestionMarkCircleIcon className="mr-1 flex-shrink-0 h-4 w-4" /> {/* Adjusted icon size */}
+          <QuestionMarkCircleIcon className="mr-1 flex-shrink-0 h-4 w-4" />
           <span className={cn(
             "transition-all duration-300 ease-in-out",
             sidebarCollapsed ? "opacity-0 w-0" : "opacity-100"

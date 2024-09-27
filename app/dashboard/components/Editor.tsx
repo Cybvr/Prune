@@ -1,4 +1,3 @@
-// @app/dashboard/components/Editor.tsx
 'use client';
 
 import React from 'react';
@@ -52,7 +51,7 @@ interface EditorProps {
 
 const Editor: React.FC<EditorProps> = ({ content, setContent }) => {
   return (
-    <div className="h-full">
+    <div className="h-full w-full">
       <QuillNoSSRWrapper
         modules={modules}
         formats={formats}
@@ -61,6 +60,7 @@ const Editor: React.FC<EditorProps> = ({ content, setContent }) => {
         onChange={setContent}
         style={{ 
           height: '100%', 
+          overflow: 'auto', // Ensure overflow is managed inside the editor
           border: 'none',
         }}
       />

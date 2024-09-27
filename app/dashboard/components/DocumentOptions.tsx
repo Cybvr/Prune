@@ -6,17 +6,17 @@ import { Button } from '@/components/ui/button';
 import { Popover, PopoverTrigger, PopoverContent } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
 import { StarIcon, CalendarIcon } from '@heroicons/react/24/outline';
-import format from 'date-fns/format';
+import { format, parseISO } from 'date-fns';
 
 interface DocumentOptionsProps {
   selectedStatus: string | null;
   setSelectedStatus: (status: string | null) => void;
   selectedPriority: string | null;
   setSelectedPriority: (priority: string | null) => void;
-  startDate: Date | null;
-  setStartDate: (date: Date | null) => void;
-  endDate: Date | null;
-  setEndDate: (date: Date | null) => void;
+  startDate: string | null;
+  setStartDate: (date: string | null) => void;
+  endDate: string | null;
+  setEndDate: (date: string | null) => void;
   favorite: boolean;
   setFavorite: (fav: boolean) => void;
 }
@@ -36,11 +36,23 @@ const DocumentOptions: React.FC<DocumentOptionsProps> = ({
   favorite,
   setFavorite,
 }) => {
+  // Convert ISO string dates to Date objects for the Calendar component
+  const startDateFormatted = startDate ? parseISO(startDate) : null;
+  const endDateFormatted = endDate ? parseISO(endDate) : null;
+
+  const handleStartDateChange = (date: Date | null) => {
+    setStartDate(date ? date.toISOString() : null);
+  };
+
+  const handleEndDateChange = (date: Date | null) => {
+    setEndDate(date ? date.toISOString() : null);
+  };
+
   return (
     <div className="bg-white p-2 shadow-md rounded-md text-sm">
       <div className="mb-2">
         <label className="block text-xs font-semibold mb-1">Status</label>
-        <Select value={selectedStatus} onValueChange={setSelectedStatus}>
+        <Select value={selectedStatus || undefined} onValueChange={setSelectedStatus}>
           <SelectTrigger className="text-xs">
             <SelectValue placeholder="Select a status" />
           </SelectTrigger>
@@ -54,7 +66,7 @@ const DocumentOptions: React.FC<DocumentOptionsProps> = ({
 
       <div className="mb-2">
         <label className="block text-xs font-semibold mb-1">Priority</label>
-        <Select value={selectedPriority} onValueChange={setSelectedPriority}>
+        <Select value={selectedPriority || undefined} onValueChange={setSelectedPriority}>
           <SelectTrigger className="text-xs">
             <SelectValue placeholder="Select a priority" />
           </SelectTrigger>
@@ -71,12 +83,17 @@ const DocumentOptions: React.FC<DocumentOptionsProps> = ({
         <Popover>
           <PopoverTrigger asChild>
             <Button variant="outline" className="w-full justify-between text-xs">
-              {startDate ? format(startDate, 'PPP') : 'Select start date'}
+              {startDateFormatted ? format(startDateFormatted, 'PPP') : 'Select start date'}
               <CalendarIcon className="h-4 w-4" />
             </Button>
           </PopoverTrigger>
           <PopoverContent className="text-xs">
-            <Calendar selected={startDate} onDateChange={setStartDate} />
+            <Calendar
+              mode="single"
+              selected={startDateFormatted}
+              onSelect={handleStartDateChange}
+              initialFocus
+            />
           </PopoverContent>
         </Popover>
       </div>
@@ -86,12 +103,17 @@ const DocumentOptions: React.FC<DocumentOptionsProps> = ({
         <Popover>
           <PopoverTrigger asChild>
             <Button variant="outline" className="w-full justify-between text-xs">
-              {endDate ? format(endDate, 'PPP') : 'Select end date'}
+              {endDateFormatted ? format(endDateFormatted, 'PPP') : 'Select end date'}
               <CalendarIcon className="h-4 w-4" />
             </Button>
           </PopoverTrigger>
           <PopoverContent className="text-xs">
-            <Calendar selected={endDate} onDateChange={setEndDate} />
+            <Calendar
+              mode="single"
+              selected={endDateFormatted}
+              onSelect={handleEndDateChange}
+              initialFocus
+            />
           </PopoverContent>
         </Popover>
       </div>
